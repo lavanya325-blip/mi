@@ -1,0 +1,74 @@
+<div class="container">
+
+  <header class="site-header">
+
+    <app-menu-bar></app-menu-bar>
+
+    <app-tool-bar></app-tool-bar>
+
+  </header>
+
+
+  <main class="workspace">
+
+    <!-- ================= LEFT PANEL ================= -->
+
+    <div class="left-panel">
+
+      <div class="configuration-area">
+
+        <div class="configuration-title">
+          MIL 1553 Configuration
+        </div>
+
+
+        <div class="source-section">
+
+          <div class="source-title">
+            Source
+          </div>
+
+
+          <div class="source-options">
+
+            <span>
+              Bus A
+            </span>
+
+            <span>
+              Bus B
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+
+      <app-channel-selection>
+      </app-channel-selection>
+
+
+      <app-import-section>
+      </app-import-section>
+
+    </div>
+
+
+    <!-- ================= PLOT ================= -->
+
+    <div class="plot-area">
+
+      <app-plot-view>
+      </app-plot-view>
+
+    </div>
+
+  </main>
+
+
+  <footer>
+  </footer>
+
+</div>
