@@ -25,19 +25,19 @@ export class ImportSectionComponent {
     {
       key: 'labelFile',
       label: 'Import Label File',
-      path: '',
+      path: 'D:/file/folder/sss',
       accept: '.txt,.csv,.lbl,.xml'
     },
     {
       key: 'editLabelFile',
       label: 'Edit Label File',
-      path: '',
+      path: 'D:/file/folder/sss',
       accept: '.txt,.csv,.lbl,.xml'
     },
     {
       key: 'database',
       label: 'Import Database',
-      path: '',
+      path: 'D:/file/folder/sss',
       accept: '.db,.sqlite,.json,.xml'
     }
   ];
