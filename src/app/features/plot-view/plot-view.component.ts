@@ -4,45 +4,14 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
-  HostListener,
   OnDestroy,
   ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
-import { PacketBus, Point } from './models/plot.model';
-import { toPoints, toRawPoints } from './extensions/plot-extensions';
+import { BusPolygon, PacketBus, PlotTool, PlotTrack, Point } from './models/plot-track.model';
+import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
 import { BusExtensions } from './extensions/bus-extensions';
-import { ZoomStateService } from './services/zoom-state.service';
-import { D3ZoomHandler, D3ZoomHandlerCallbacks } from './services/zoom-handler';
-
-export interface PlotLane {
-  id: string;
-  name: string;
-  subtitle: string;
-  color: string;
-  kind: 'bus' | 'channel';
-}
-
-export interface BusPolygon {
-  center: Point;
-  path: string;
-  content: string;
-  startTime: number;
-  endTime: number;
-}
-
-export type PlotTool =
-  | 'snapshot'
-  | 'fit'
-  | 'zoomIn'
-  | 'zoomOut'
-  | 'pan'
-  | 'grid'
-  | 'cursor'
-  | 'hZoom'
-  | 'bits'
-  | 'more';
 
 @Component({
   selector: 'app-plot-view',
@@ -56,34 +25,37 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   @ViewChild('waveformContainer', { static: true }) waveformContainer!: ElementRef<HTMLElement>;
   @ViewChild('waveformsvg', { static: true }) waveformsvg!: ElementRef<SVGSVGElement>;
 
-  readonly lanes: PlotLane[] = [
-    { id: 'busA', name: 'Bus A', subtitle: 'MIL 1553', color: '#2F80ED', kind: 'bus' },
+  readonly tracks: PlotTrack[] = [
+    { id: 'busA', name: 'Bus A', subtitle: 'MIL 1553', color: '#5B9BD5', kind: 'bus' },
     { id: 'busB', name: 'Bus B', subtitle: 'MIL 1553', color: '#E77352', kind: 'bus' },
     { id: 'ch1', name: 'Channel 1', subtitle: 'Async', color: '#F5C518', kind: 'channel' },
-    { id: 'ch2', name: 'Channel 2', subtitle: 'Async', color: '#A78BFA', kind: 'channel' },
+    { id: 'ch2', name: 'Channel 2', subtitle: 'Async', color: '#C084FC', kind: 'channel' },
     { id: 'ch3', name: 'Channel 3', subtitle: 'Async', color: '#F472B6', kind: 'channel' },
     { id: 'ch4', name: 'Channel 4', subtitle: 'Async', color: '#4ADE80', kind: 'channel' }
   ];
 
   readonly tools: { id: PlotTool; label: string }[] = [
     { id: 'snapshot', label: 'Snapshot' },
-    { id: 'fit', label: 'Fit to view' },
+    { id: 'fit', label: 'Zoom to fit' },
     { id: 'zoomIn', label: 'Zoom in' },
     { id: 'zoomOut', label: 'Zoom out' },
     { id: 'pan', label: 'Pan' },
-    { id: 'grid', label: 'Grid' },
+    { id: 'select', label: 'Select' },
     { id: 'cursor', label: 'Cursor' },
-    { id: 'hZoom', label: 'Horizontal zoom' },
-    { id: 'bits', label: 'Bits / point' },
-    { id: 'more', label: 'More' }
+    { id: 'marker', label: 'Marker' },
+    { id: 'grid', label: 'Grid' },
+    { id: 'flag', label: 'Flag' }
   ];
 
   activeTool: PlotTool = 'pan';
   gridEnabled = true;
-  showBits = false;
-  showMore = false;
   cursorEnabled = false;
+  selectEnabled = false;
+  markerEnabled = false;
+  flagEnabled = false;
   cursorX = -1;
+  markers: number[] = [];
+  flags: number[] = [];
 
   showOverlay = false;
   overlayX = 0;
@@ -91,35 +63,33 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   private overlayx0 = 0;
 
   plotWidth = 800;
-  plotHeight = 480;
-  laneHeight = 70;
-  readonly labelWidth = 118;
+  plotHeight = 520;
+  laneHeight = 80;
+  readonly axisHeight = 22;
 
   xScale!: d3.ScaleLinear<number, number>;
-  channelPaths = new Map<string, { path: string; yScale: d3.ScaleLinear<number, number> }>();
+  channelPaths = new Map<string, string>();
+  busWavePaths = new Map<string, string>();
   busPolygons = new Map<string, BusPolygon[]>();
-  gridLines: number[] = [];
+  gridLines: { x: number; label: string }[] = [];
 
   private waveforms = new Map<string, Point[]>();
   private busMap = new Map<string, PacketBus[]>();
-  private fullDomain: [number, number] = [0, 1e-6];
+  private fullDomain: [number, number] = [0, 2e-6];
   private start = 0;
-  private stop = 1e-6;
-  private minEdgeWidth = 1e-9;
-  private zoomHandler?: D3ZoomHandler;
+  private stop = 2e-7;
+  private minEdgeWidth = 40e-9;
+  private zoomBehavior?: d3.ZoomBehavior<SVGSVGElement, unknown>;
   private resizeObserver?: ResizeObserver;
   private readonly lineGenerator = d3.line<Point>().curve(d3.curveStepAfter);
 
-  constructor(
-    private cdr: ChangeDetectorRef,
-    private zoomStateService: ZoomStateService
-  ) {}
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
     this.buildDemoCapture();
     this.measurePlot();
     this.resizePlot();
-    this.setupZoom();
+    this.enablePan();
 
     this.resizeObserver = new ResizeObserver(() => {
       this.measurePlot();
@@ -129,12 +99,12 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.zoomHandler?.destroy();
+    this.clearZoom();
     this.resizeObserver?.disconnect();
   }
 
-  trackLane(_index: number, lane: PlotLane): string {
-    return lane.id;
+  trackTrack(_index: number, track: PlotTrack): string {
+    return track.id;
   }
 
   onTool(tool: PlotTool, event: MouseEvent): void {
@@ -146,52 +116,50 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
         break;
       case 'fit':
         this.fitView();
+        this.activeTool = 'fit';
         break;
       case 'zoomIn':
-        this.disablePanZoom();
+        this.clearZoom();
         this.activeTool = 'zoomIn';
         break;
       case 'zoomOut':
-        this.disablePanZoom();
+        this.clearZoom();
         this.activeTool = 'zoomOut';
         break;
       case 'pan':
         this.activeTool = 'pan';
-        this.setupZoom();
+        this.enablePan();
+        break;
+      case 'select':
+        this.selectEnabled = !this.selectEnabled;
+        this.activeTool = 'select';
+        this.clearZoom();
+        break;
+      case 'cursor':
+        this.cursorEnabled = !this.cursorEnabled;
+        this.activeTool = 'cursor';
+        this.clearZoom();
+        if (!this.cursorEnabled) {
+          this.cursorX = -1;
+        }
+        break;
+      case 'marker':
+        this.markerEnabled = !this.markerEnabled;
+        this.activeTool = 'marker';
+        this.clearZoom();
         break;
       case 'grid':
         this.gridEnabled = !this.gridEnabled;
         this.resizePlot();
         break;
-      case 'cursor':
-        this.cursorEnabled = !this.cursorEnabled;
-        this.activeTool = 'cursor';
-        this.disablePanZoom();
-        if (!this.cursorEnabled) {
-          this.cursorX = -1;
-        }
-        break;
-      case 'hZoom':
-        this.disablePanZoom();
-        this.activeTool = 'hZoom';
-        break;
-      case 'bits':
-        this.showBits = !this.showBits;
-        this.activeTool = 'bits';
-        this.resizePlot();
-        break;
-      case 'more':
-        this.showMore = !this.showMore;
-        this.activeTool = 'more';
+      case 'flag':
+        this.flagEnabled = !this.flagEnabled;
+        this.activeTool = 'flag';
+        this.clearZoom();
         break;
     }
 
     this.cdr.markForCheck();
-  }
-
-  resetView(): void {
-    this.showMore = false;
-    this.fitView();
   }
 
   waveformMousedown(event: MouseEvent): void {
@@ -200,21 +168,25 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     }
 
     const x = event.offsetX;
-    if (this.activeTool === 'zoomIn' || this.activeTool === 'hZoom') {
+    if (this.activeTool === 'zoomIn') {
       this.showOverlay = true;
       this.overlayx0 = x;
       this.overlayX = x;
       this.overlayWidth = 0;
       event.stopPropagation();
     } else if (this.activeTool === 'zoomOut') {
-      const visibleRange = this.stop - this.start;
-      const position = this.xScale.invert(x);
-      this.start = position - 2 * visibleRange;
-      this.stop = position + 2 * visibleRange;
-      this.clampWindow();
-      this.resizePlot();
+      this.zoomAround(x, 4);
       event.stopPropagation();
     } else if (this.activeTool === 'cursor' && this.cursorEnabled) {
+      this.cursorX = x;
+      event.stopPropagation();
+    } else if (this.activeTool === 'marker' && this.markerEnabled) {
+      this.markers = [...this.markers, x];
+      event.stopPropagation();
+    } else if (this.activeTool === 'flag' && this.flagEnabled) {
+      this.flags = [...this.flags, x];
+      event.stopPropagation();
+    } else if (this.activeTool === 'select' && this.selectEnabled) {
       this.cursorX = x;
       event.stopPropagation();
     }
@@ -248,18 +220,18 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     event.stopPropagation();
   }
 
-  @HostListener('document:click')
-  closeMore(): void {
-    if (this.showMore) {
-      this.showMore = false;
-      this.cdr.markForCheck();
-    }
+  private zoomAround(pixelX: number, factor: number): void {
+    const visibleRange = this.stop - this.start;
+    const position = this.xScale.invert(pixelX);
+    this.start = position - (visibleRange * factor) / 2;
+    this.stop = position + (visibleRange * factor) / 2;
+    this.clampWindow();
+    this.resizePlot();
   }
 
   private fitView(): void {
     this.start = this.fullDomain[0];
-    this.stop = this.fullDomain[0] + this.minEdgeWidth * 1000;
-    this.clampWindow();
+    this.stop = this.fullDomain[1];
     this.resizePlot();
   }
 
@@ -272,131 +244,134 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       this.stop = end;
     }
     if (this.stop <= this.start) {
-      this.stop = this.start + this.minEdgeWidth * 100;
+      this.stop = Math.min(end, this.start + this.minEdgeWidth * 80);
     }
   }
 
-  private disablePanZoom(): void {
-    this.zoomHandler?.destroy();
-    this.zoomHandler = undefined;
+  private clearZoom(): void {
+    if (this.zoomBehavior) {
+      d3.select(this.waveformsvg.nativeElement).on('.zoom', null);
+      this.zoomBehavior = undefined;
+    }
     d3.select(this.waveformsvg.nativeElement).select('g.zoom-content').attr('transform', null);
   }
 
-  private setupZoom(): void {
-    this.disablePanZoom();
-    this.activeTool = 'pan';
-
-    const zoomCallbacks: D3ZoomHandlerCallbacks = {
-      onTransform: transform => {
+  private enablePan(): void {
+    this.clearZoom();
+    this.zoomBehavior = d3
+      .zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.1, 20])
+      .on('zoom', event => {
         d3.select(this.waveformsvg.nativeElement)
           .select('g.zoom-content')
-          .attr('transform', `translate(${transform.x},0) scale(${transform.k},1)`);
-        this.zoomStateService.updateTransform(transform);
-      },
-      onTransformEnd: async finalTransform => {
-        const newDomain = finalTransform.rescaleX(this.xScale).domain();
-        this.start = newDomain[0];
-        this.stop = newDomain[1];
+          .attr('transform', `translate(${event.transform.x},0) scale(${event.transform.k},1)`);
+      })
+      .on('end', event => {
+        const domain = event.transform.rescaleX(this.xScale).domain();
+        this.start = domain[0];
+        this.stop = domain[1];
         this.clampWindow();
         this.resizePlot();
-        this.zoomStateService.updateTransform(d3.zoomIdentity);
-        this.zoomHandler?.reset();
         d3.select(this.waveformsvg.nativeElement).select('g.zoom-content').attr('transform', null);
-      }
-    };
+        this.zoomBehavior?.transform(d3.select(this.waveformsvg.nativeElement), d3.zoomIdentity);
+      });
 
-    this.zoomHandler = new D3ZoomHandler(this.waveformsvg.nativeElement, zoomCallbacks, {
-      scaleExtent: [0.1, 10]
-    });
-    this.zoomHandler.init();
+    d3.select(this.waveformsvg.nativeElement).call(this.zoomBehavior);
   }
 
   private measurePlot(): void {
     const rect = this.waveformContainer.nativeElement.getBoundingClientRect();
-    this.plotWidth = Math.max(200, rect.width);
-    this.plotHeight = Math.max(200, rect.height);
-    this.laneHeight = this.plotHeight / this.lanes.length;
+    this.plotWidth = Math.max(240, rect.width);
+    this.plotHeight = Math.max(240, rect.height);
+    this.laneHeight = (this.plotHeight - this.axisHeight) / this.tracks.length;
   }
 
   private resizePlot(): void {
     const waveWidth = Math.max(1, this.plotWidth);
     this.xScale = d3.scaleLinear().domain([this.start, this.stop]).range([0, waveWidth]);
 
-    this.lanes.forEach((lane, index) => {
+    const visibleStart = 2 * this.start - this.stop;
+    const visibleStop = 2 * this.stop - this.start;
+
+    this.tracks.forEach((track, index) => {
       const yScale = d3
         .scaleLinear()
-        .domain([-0.1, 1.1])
-        .range([(index + 1) * this.laneHeight - 8, index * this.laneHeight + 8]);
+        .domain([-0.15, 1.15])
+        .range([(index + 1) * this.laneHeight - 10, index * this.laneHeight + 10]);
 
-      if (lane.kind === 'channel') {
-        const waveform = this.waveforms.get(lane.id) ?? [];
-        this.lineGenerator.x(d => this.xScale(d.x)).y(d => yScale(d.y));
-        const visibleStart = 2 * this.start - this.stop;
-        const visibleStop = 2 * this.stop - this.start;
-        const points = toPoints(waveform, visibleStart, visibleStop, this.fullDomain);
-        this.channelPaths.set(lane.id, {
-          path: this.lineGenerator(points) ?? '',
-          yScale
-        });
+      const waveform = this.waveforms.get(track.id) ?? [];
+      this.lineGenerator.x(d => this.xScale(d.x)).y(d => yScale(d.y));
+      const points = toPoints(waveform, visibleStart, visibleStop, this.fullDomain);
+      const path = this.lineGenerator(points) ?? '';
+
+      if (track.kind === 'channel') {
+        this.channelPaths.set(track.id, path);
       } else {
-        const buses = this.busMap.get(lane.id) ?? [];
+        this.busWavePaths.set(track.id, path);
+        const buses = this.busMap.get(track.id) ?? [];
         this.busPolygons.set(
-          lane.id,
-          buses.map(packet => ({
-            center: BusExtensions.getPolygonCenter(packet, this.xScale, yScale),
-            path: BusExtensions.getPolygon(packet, this.xScale, yScale),
-            content: packet.Content,
-            startTime: packet.StartTime,
-            endTime: packet.EndTime
-          }))
+          track.id,
+          buses
+            .filter(packet => packet.EndTime >= this.start && packet.StartTime <= this.stop)
+            .map(packet => ({
+              center: BusExtensions.getPolygonCenter(packet, this.xScale, yScale),
+              path: BusExtensions.getPolygon(packet, this.xScale, yScale),
+              content: packet.Content,
+              startTime: packet.StartTime,
+              endTime: packet.EndTime
+            }))
         );
       }
     });
 
+    const lineCount = 9;
     this.gridLines = this.gridEnabled
-      ? Array.from({ length: 9 }, (_, i) => ((i + 1) * waveWidth) / 10)
+      ? Array.from({ length: lineCount }, (_, i) => {
+          const x = ((i + 1) * waveWidth) / (lineCount + 1);
+          return { x, label: toEngineeringTime(this.xScale.invert(x) - this.fullDomain[0]) };
+        })
       : [];
 
     this.cdr.markForCheck();
   }
 
-  /**
-   * Same I3C capture path: edges -> toRawPoints (0/1) -> toPoints + curveStepAfter.
-   * Demo edges stand in until MIL ResultService is wired.
-   */
+  /** I3C-style edges -> 0/1 points. Zoomed vs unzoomed is only xScale domain. */
   private buildDemoCapture(): void {
-    const edgeCount = 1000;
     this.minEdgeWidth = 40e-9;
     const start = 0;
-    const stop = start + this.minEdgeWidth * edgeCount;
+    const stop = 8e-6;
     this.fullDomain = [start, stop];
-    this.start = start;
-    this.stop = start + this.minEdgeWidth * 160;
+    this.start = start + 1.2e-6;
+    this.stop = start + 1.85e-6;
 
-    this.lanes.forEach((lane, laneIndex) => {
+    this.tracks.forEach(track => {
       const edges: number[] = [];
       let t = start;
-      const period = this.minEdgeWidth * (6 + (laneIndex % 4));
+      const period = track.kind === 'channel' ? this.minEdgeWidth * 2.2 : this.minEdgeWidth * 8;
       while (t < stop) {
-        t += period * (0.6 + ((laneIndex + 1) % 3) * 0.2);
+        t += period;
         edges.push(t);
       }
-
-      this.waveforms.set(lane.id, toRawPoints(true, edges));
-
-      if (lane.kind === 'bus') {
-        const packets: PacketBus[] = [];
-        const labels = lane.id === 'busA'
-          ? ['CMD', '17', '000000000001', 'STS']
-          : ['CMD', '2A', '000000001010', 'STS'];
-        for (let i = 0; i < 24; i++) {
-          const s = start + i * this.minEdgeWidth * 28;
-          const e = s + this.minEdgeWidth * 18;
-          packets.push({ StartTime: s, EndTime: e, Content: labels[i % labels.length] });
-        }
-        this.busMap.set(lane.id, packets);
-      }
+      this.waveforms.set(track.id, toRawPoints(true, edges));
     });
+
+    const busLabelsA = ['17', 'D', 'S', '000000000001'];
+    const busLabelsB = ['2A', 'D', 'S', '000000001010'];
+    this.busMap.set('busA', this.buildPackets(start, stop, busLabelsA, 0));
+    this.busMap.set('busB', this.buildPackets(start, stop, busLabelsB, this.minEdgeWidth * 3));
+  }
+
+  private buildPackets(start: number, stop: number, labels: string[], offset: number): PacketBus[] {
+    const packets: PacketBus[] = [];
+    let t = start + offset;
+    let i = 0;
+    while (t < stop) {
+      const width = this.minEdgeWidth * (10 + (i % 3) * 6);
+      packets.push({ StartTime: t, EndTime: t + width, Content: labels[i % labels.length] });
+      t += width + this.minEdgeWidth * 4;
+      i++;
+    }
+    return packets;
   }
 
   private capturePlot(): void {

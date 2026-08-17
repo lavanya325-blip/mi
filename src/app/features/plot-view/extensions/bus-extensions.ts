@@ -1,5 +1,5 @@
 import * as d3 from 'd3';
-import { PacketBus, Point } from '../models/plot.model';
+import { PacketBus, Point } from '../models/plot-track.model';
 
 export class BusExtensions {
   static getPolygon(
@@ -15,7 +15,6 @@ export class BusExtensions {
     const width = x2 - x1;
 
     let polygonPoints: [number, number][];
-
     if (width > 10) {
       const xOffset = 5;
       polygonPoints = [
