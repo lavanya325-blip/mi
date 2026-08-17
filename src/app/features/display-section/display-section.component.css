@@ -1,0 +1,83 @@
+/* Frame 1171276468 — size/font fixed.
+   Colours from I3C styles.css (:root = light, body.dark-mode = dark). */
+
+:host {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px;
+  gap: 12px;
+  width: 255px;
+  height: 76px;
+  border-top: 1px solid var(--inner-block-border, #000000);
+  flex: none;
+  order: 10;
+  align-self: stretch;
+  flex-grow: 0;
+  font-family: 'Roboto', sans-serif;
+  color: var(--color-text);
+}
+
+.display-section {
+  display: contents;
+}
+
+.section-title {
+  box-sizing: border-box;
+  flex: none;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--color-text);
+}
+
+.view-row {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  flex: none;
+}
+
+.view-label {
+  flex: none;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--color-text);
+}
+
+.view-select {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 24px;
+  padding: 0 24px 0 8px;
+  border: 1px solid var(--inner-block-border);
+  border-radius: 2px;
+  background-color: var(--input-second-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath fill='%23A1A1AA' d='M1 1.25 5 5.25 9 1.25'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  color: var(--color-text);
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  line-height: 24px;
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+}
+
+.view-select:focus {
+  outline: none;
+  border-color: var(--btn-bg);
+}
+
+.view-select option {
+  background-color: var(--input-second-bg);
+  color: var(--color-text);
+}

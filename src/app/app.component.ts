@@ -13,6 +13,7 @@ import { ToolBarComponent } from './features/dashboard/components/tool-bar/tool-
 import { ChannelSelectionComponent } from './features/channel-selection/channel-selection.component';
 import { PlotViewComponent } from './features/plot-view/plot-view.component';
 import { ImportSectionComponent } from './features/import-section/import-section.component';
+import { DisplaySectionComponent } from './features/display-section/display-section.component';
 
 @Component({
   selector: 'app-root',
@@ -32,6 +33,7 @@ import { ImportSectionComponent } from './features/import-section/import-section
     ChannelSelectionComponent,
     PlotViewComponent,
     ImportSectionComponent,
+    DisplaySectionComponent,
   ],
 
   providers: [],

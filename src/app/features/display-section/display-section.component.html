@@ -1,0 +1,17 @@
+<section class="display-section" aria-label="Display">
+  <div class="section-title">Display</div>
+
+  <div class="view-row">
+    <label class="view-label" for="display-view">View</label>
+
+    <select
+      id="display-view"
+      class="view-select"
+      [(ngModel)]="selectedView"
+    >
+      <option *ngFor="let view of views" [ngValue]="view">
+        {{ view }}
+      </option>
+    </select>
+  </div>
+</section>
