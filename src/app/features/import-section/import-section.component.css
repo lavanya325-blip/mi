@@ -1,11 +1,14 @@
-/* Import section
-   Dark  — Figma Frame 1171276452
-   Light — Figma Frame 1171276523
-   Colors use I3C-style CSS variables with MIL fallbacks.
-*/
+/* Frame 1171276452 — layout is dark-theme only (size/font never change).
+   Light/dark switch colours the same way as I3C toolbar: CSS variables. */
 
 :host {
-  --import-gap: 12px;
+  --import-title-color: var(--color-primary, #7EB6FF);
+  --import-label-color: #D4D4D8;
+  --import-border: #000000;
+  --import-input-bg: #18181B;
+  --import-input-fg: #F4F4F5;
+  --import-input-border: #3F3F46;
+  --import-input-placeholder: #8A8A8A;
   --import-browse-bg: var(--color-primary, #2F80ED);
   --import-browse-fg: var(--color-white, #FFFFFF);
 
@@ -13,48 +16,24 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: var(--import-padding);
-  gap: var(--import-gap);
-
-  width: var(--import-width);
-  height: var(--import-height);
-
+  padding: 4px;
+  gap: 12px;
+  width: 255px;
+  height: 196px;
   border-top: 1px solid var(--import-border);
-
   flex: none;
   order: 8;
   align-self: stretch;
   flex-grow: 0;
-
   font-family: 'Roboto', sans-serif;
   color: var(--import-label-color);
 }
 
-/* Frame 1171276452 — dark */
-:host,
-:host-context(.dark-theme),
-:host-context([data-theme='dark']) {
-  --import-padding: 4px;
-  --import-width: 255px;
-  --import-height: 196px;
-  --import-border: #000000;
-  --import-title-color: var(--color-primary, #7EB6FF);
-  --import-label-color: #D4D4D8;
-  --import-input-bg: #18181B;
-  --import-input-fg: #F4F4F5;
-  --import-input-border: #3F3F46;
-  --import-input-placeholder: #8A8A8A;
-}
-
-/* Frame 1171276523 — light */
 :host-context(.light-theme),
 :host-context([data-theme='light']) {
-  --import-padding: 12px 4px;
-  --import-width: 297px;
-  --import-height: 216px;
-  --import-border: #A1A1AA;
-  --import-title-color: #18181B;
+  --import-title-color: var(--color-primary, #1A3881);
   --import-label-color: #3F3F46;
+  --import-border: #A1A1AA;
   --import-input-bg: var(--color-white, #FFFFFF);
   --import-input-fg: #18181B;
   --import-input-border: #D4D4D8;
