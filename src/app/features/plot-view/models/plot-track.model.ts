@@ -27,12 +27,12 @@ export interface BusPolygon {
 
 export type PlotTool =
   | 'snapshot'
-  | 'fit'
+  | 'expand'
+  | 'select'
   | 'zoomIn'
   | 'zoomOut'
   | 'pan'
-  | 'select'
+  | 'move'
   | 'cursor'
-  | 'marker'
   | 'grid'
   | 'flag';

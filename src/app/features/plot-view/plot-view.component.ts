@@ -4,6 +4,8 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  HostBinding,
+  HostListener,
   Input,
   OnDestroy,
   ViewChild
@@ -44,19 +46,19 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   readonly tools: { id: PlotTool; label: string }[] = [
     { id: 'snapshot', label: 'Snapshot' },
-    { id: 'fit', label: 'Zoom to fit (unzoomed)' },
+    { id: 'expand', label: 'Full screen' },
+    { id: 'select', label: 'Select' },
     { id: 'zoomIn', label: 'Zoom in' },
     { id: 'zoomOut', label: 'Zoom out' },
     { id: 'pan', label: 'Pan' },
-    { id: 'select', label: 'Select' },
+    { id: 'move', label: 'Move' },
     { id: 'cursor', label: 'Cursor' },
-    { id: 'marker', label: 'Marker' },
     { id: 'grid', label: 'Grid' },
     { id: 'flag', label: 'Flag' }
   ];
 
   hasData = false;
-  isExpanded = false;
+  @HostBinding('class.is-fullscreen') isFullscreen = false;
   activeTool: PlotTool = 'pan';
   gridEnabled = true;
   cursorEnabled = false;
@@ -115,23 +117,22 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     return track.id;
   }
 
-  toggleExpanded(): void {
-    this.isExpanded = !this.isExpanded;
-    if (this.isExpanded) {
-      this.applyZoomedWindow();
-      this.activeTool = 'pan';
-    } else {
-      this.start = this.fullDomain[0];
-      this.stop = this.fullDomain[1];
-      this.clearZoom();
-    }
+  toggleFullscreen(): void {
+    this.isFullscreen = !this.isFullscreen;
     this.cdr.detectChanges();
-    this.measurePlot();
-    this.resizePlot();
-    if (this.isExpanded) {
+    requestAnimationFrame(() => {
+      this.measurePlot();
+      this.resizePlot();
       this.enablePan();
+      this.cdr.markForCheck();
+    });
+  }
+
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    if (this.isFullscreen) {
+      this.toggleFullscreen();
     }
-    this.cdr.markForCheck();
   }
 
   laneHeight(track: PlotTrack): number {
@@ -169,6 +170,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.fullDomain = [data.startTime, data.endTime];
     this.start = data.startTime;
     this.stop = data.endTime;
+    this.applyZoomedWindow();
 
     Object.entries(data.channels).forEach(([id, collection]) => {
       this.waveforms.set(id, this.edgesToWaveform(collection));
@@ -187,7 +189,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   onTool(tool: PlotTool, event: MouseEvent): void {
     event.stopPropagation();
-    if (!this.hasData || !this.isExpanded) {
+    if (!this.hasData && tool !== 'expand' && tool !== 'snapshot') {
       return;
     }
 
@@ -195,11 +197,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       case 'snapshot':
         this.capturePlot();
         break;
-      case 'fit':
-        this.start = this.fullDomain[0];
-        this.stop = this.fullDomain[1];
-        this.activeTool = 'fit';
-        this.resizePlot();
+      case 'expand':
+        this.toggleFullscreen();
         break;
       case 'zoomIn':
         this.clearZoom();
@@ -210,6 +209,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
         this.activeTool = 'zoomOut';
         break;
       case 'pan':
+      case 'move':
         this.activeTool = 'pan';
         this.enablePan();
         break;
@@ -226,11 +226,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
           this.cursorX = -1;
         }
         break;
-      case 'marker':
-        this.markerEnabled = !this.markerEnabled;
-        this.activeTool = 'marker';
-        this.clearZoom();
-        break;
       case 'grid':
         this.gridEnabled = !this.gridEnabled;
         this.resizePlot();
@@ -246,7 +241,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   waveformMousedown(event: MouseEvent): void {
-    if (!this.hasData || !this.isExpanded || event.button !== 0) {
+    if (!this.hasData || event.button !== 0) {
       return;
     }
 
@@ -267,9 +262,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       event.stopPropagation();
     } else if (this.activeTool === 'cursor' && this.cursorEnabled) {
       this.cursorX = x;
-      event.stopPropagation();
-    } else if (this.activeTool === 'marker' && this.markerEnabled) {
-      this.markers = [...this.markers, x];
       event.stopPropagation();
     } else if (this.activeTool === 'flag' && this.flagEnabled) {
       this.flags = [...this.flags, x];
@@ -368,7 +360,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   private enablePan(): void {
     const svg = this.waveformsvg?.nativeElement;
-    if (!svg || !this.hasData || !this.isExpanded) {
+    if (!svg || !this.hasData) {
       return;
     }
     this.clearZoom();

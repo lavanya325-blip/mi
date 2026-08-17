@@ -33,9 +33,7 @@ export function createSampleTrace(): TraceData {
     return edges;
   };
 
-  const busPeriod = minEdgeWidth * 6;
-  const busAEdges = clockEdges(busPeriod, 0);
-  const busBEdges = clockEdges(busPeriod, minEdgeWidth * 2);
+  const period = minEdgeWidth * 2;
 
   return {
     referenceTime,
@@ -43,12 +41,12 @@ export function createSampleTrace(): TraceData {
     endTime,
     minEdgeWidth,
     channels: {
-      busA: { firstEdgeRise: true, edges: busAEdges },
-      busB: { firstEdgeRise: true, edges: busBEdges },
-      ch1: { firstEdgeRise: true, edges: clockEdges(minEdgeWidth * 2, 0) },
-      ch2: { firstEdgeRise: true, edges: clockEdges(minEdgeWidth * 2, minEdgeWidth * 0.4) },
-      ch3: { firstEdgeRise: true, edges: clockEdges(minEdgeWidth * 2.4, minEdgeWidth * 0.2) },
-      ch4: { firstEdgeRise: true, edges: clockEdges(minEdgeWidth * 2.2, minEdgeWidth * 0.6) }
+      busA: { firstEdgeRise: true, edges: clockEdges(period, 0) },
+      busB: { firstEdgeRise: true, edges: clockEdges(period, minEdgeWidth * 0.5) },
+      ch1: { firstEdgeRise: true, edges: clockEdges(period, 0) },
+      ch2: { firstEdgeRise: true, edges: clockEdges(period, minEdgeWidth * 0.4) },
+      ch3: { firstEdgeRise: true, edges: clockEdges(period, minEdgeWidth * 0.2) },
+      ch4: { firstEdgeRise: true, edges: clockEdges(period, minEdgeWidth * 0.6) }
     },
     buses: {
       busA: buildStatusWords(startTime, endTime, minEdgeWidth, ['17', 'D', 'S', '000000000001'], 0),
