@@ -27,14 +27,7 @@
       *ngFor="let tool of tools"
       type="button"
       class="tool-btn"
-      [class.is-active]="
-        activeTool === tool.id
-        || (tool.id === 'grid' && gridEnabled)
-        || (tool.id === 'cursor' && cursorEnabled)
-        || (tool.id === 'select' && selectEnabled)
-        || (tool.id === 'expand' && isFullscreen)
-        || (tool.id === 'flag' && flagEnabled)
-      "
+      [class.is-active]="isToolLit(tool.id)"
       [attr.title]="tool.label"
       [attr.aria-label]="tool.label"
       (click)="onTool(tool.id, $event)"

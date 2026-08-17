@@ -12,7 +12,20 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
-import { BusPolygon, PacketBus, PlotTool, PlotTrack, Point } from './models/plot-track.model';
+import { BusPolygon, PacketBus, PlotTrack, Point } from './models/plot-track.model';
+
+/** Defined here so the template type-checks even if plot-track.model.ts is an older copy. */
+export type PlotTool =
+  | 'snapshot'
+  | 'expand'
+  | 'select'
+  | 'zoomIn'
+  | 'zoomOut'
+  | 'pan'
+  | 'move'
+  | 'cursor'
+  | 'grid'
+  | 'flag';
 import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
 import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
 import { BusExtensions } from './extensions/bus-extensions';
@@ -185,6 +198,25 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.resizePlot();
     this.enablePan();
     this.cdr.markForCheck();
+  }
+
+  isToolLit(tool: PlotTool): boolean {
+    if (tool === 'grid') {
+      return this.gridEnabled;
+    }
+    if (tool === 'cursor') {
+      return this.cursorEnabled;
+    }
+    if (tool === 'select') {
+      return this.selectEnabled;
+    }
+    if (tool === 'expand') {
+      return this.isFullscreen;
+    }
+    if (tool === 'flag') {
+      return this.flagEnabled;
+    }
+    return this.activeTool === tool;
   }
 
   onTool(tool: PlotTool, event: MouseEvent): void {
