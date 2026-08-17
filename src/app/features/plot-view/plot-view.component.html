@@ -47,7 +47,7 @@
     </button>
   </div>
 
-  <div class="plot-body">
+  <div class="plot-body" *ngIf="hasData">
     <div class="lane-rail">
       <div class="lane-label" *ngFor="let track of tracks; trackBy: trackTrack" [style.height.px]="laneHeight">
         <span class="lane-bar" [style.background]="track.color"></span>
@@ -91,32 +91,33 @@
         </g>
 
         <g class="zoom-content">
-          <ng-container *ngFor="let track of tracks; trackBy: trackTrack">
+          <ng-container *ngFor="let track of tracks; let i = index; trackBy: trackTrack">
             <path
-              *ngIf="track.kind === 'channel'"
               class="wave-path"
-              [attr.d]="channelPaths.get(track.id)"
+              [attr.d]="wavePaths.get(track.id)"
               [attr.stroke]="track.color"
             ></path>
 
             <g *ngIf="track.kind === 'bus'">
-              <path
-                class="wave-path"
-                [attr.d]="busWavePaths.get(track.id)"
-                [attr.stroke]="track.color"
-              ></path>
-              <polygon
-                *ngFor="let polygon of busPolygons.get(track.id)"
-                class="bus-poly"
-                [attr.points]="polygon.path"
-                [attr.fill]="track.color"
-              ></polygon>
-              <text
-                *ngFor="let polygon of busPolygons.get(track.id)"
-                class="bus-text"
-                [attr.x]="polygon.center.x"
-                [attr.y]="polygon.center.y"
-              >{{ polygon.content }}</text>
+              <ng-container *ngFor="let polygon of busPolygons.get(track.id)">
+                <line
+                  class="status-link"
+                  [attr.x1]="xScale(polygon.startTime)"
+                  [attr.x2]="xScale(polygon.startTime)"
+                  [attr.y1]="waveYScale(i)(0)"
+                  [attr.y2]="polygon.center.y"
+                ></line>
+                <polygon
+                  class="bus-poly"
+                  [attr.points]="polygon.path"
+                  [attr.fill]="track.color"
+                ></polygon>
+                <text
+                  class="bus-text"
+                  [attr.x]="polygon.center.x"
+                  [attr.y]="polygon.center.y"
+                >{{ polygon.content }}</text>
+              </ng-container>
             </g>
           </ng-container>
         </g>
@@ -149,7 +150,7 @@
 
         <g class="time-axis">
           <line
-            class="grid-line"
+            class="grid-line lane-sep"
             x1="0"
             [attr.x2]="plotWidth"
             [attr.y1]="plotHeight - axisHeight"
@@ -164,5 +165,9 @@
         </g>
       </svg>
     </div>
+  </div>
+
+  <div class="empty-state" *ngIf="!hasData">
+    Load a trace to display waveforms.
   </div>
 </section>

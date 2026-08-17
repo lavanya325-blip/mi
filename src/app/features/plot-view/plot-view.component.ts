@@ -4,12 +4,14 @@ import {
   ChangeDetectorRef,
   Component,
   ElementRef,
+  Input,
   OnDestroy,
   ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
 import { BusPolygon, PacketBus, PlotTool, PlotTrack, Point } from './models/plot-track.model';
+import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
 import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
 import { BusExtensions } from './extensions/bus-extensions';
 
@@ -22,8 +24,14 @@ import { BusExtensions } from './extensions/bus-extensions';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PlotViewComponent implements AfterViewInit, OnDestroy {
-  @ViewChild('waveformContainer', { static: true }) waveformContainer!: ElementRef<HTMLElement>;
-  @ViewChild('waveformsvg', { static: true }) waveformsvg!: ElementRef<SVGSVGElement>;
+  @ViewChild('waveformContainer') waveformContainer?: ElementRef<HTMLElement>;
+  @ViewChild('waveformsvg') waveformsvg?: ElementRef<SVGSVGElement>;
+
+  /** Later: bind imported trace. Until then sample data is used. */
+  @Input()
+  set capture(value: TraceData | null | undefined) {
+    this.loadTrace(value ?? null);
+  }
 
   readonly tracks: PlotTrack[] = [
     { id: 'busA', name: 'Bus A', subtitle: 'MIL 1553', color: '#5B9BD5', kind: 'bus' },
@@ -36,7 +44,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   readonly tools: { id: PlotTool; label: string }[] = [
     { id: 'snapshot', label: 'Snapshot' },
-    { id: 'fit', label: 'Zoom to fit' },
+    { id: 'fit', label: 'Zoom to fit (unzoomed)' },
     { id: 'zoomIn', label: 'Zoom in' },
     { id: 'zoomOut', label: 'Zoom out' },
     { id: 'pan', label: 'Pan' },
@@ -47,6 +55,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     { id: 'flag', label: 'Flag' }
   ];
 
+  hasData = false;
   activeTool: PlotTool = 'pan';
   gridEnabled = true;
   cursorEnabled = false;
@@ -65,37 +74,35 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   plotWidth = 800;
   plotHeight = 520;
   laneHeight = 80;
-  readonly axisHeight = 22;
+  readonly axisHeight = 24;
 
   xScale!: d3.ScaleLinear<number, number>;
-  channelPaths = new Map<string, string>();
-  busWavePaths = new Map<string, string>();
+  wavePaths = new Map<string, string>();
   busPolygons = new Map<string, BusPolygon[]>();
   gridLines: { x: number; label: string }[] = [];
 
   private waveforms = new Map<string, Point[]>();
   private busMap = new Map<string, PacketBus[]>();
-  private fullDomain: [number, number] = [0, 2e-6];
+  private fullDomain: [number, number] = [0, 1];
   private start = 0;
-  private stop = 2e-7;
-  private minEdgeWidth = 40e-9;
+  private stop = 1;
+  private minEdgeWidth = 50e-9;
+  private referenceTime = 0;
   private zoomBehavior?: d3.ZoomBehavior<SVGSVGElement, unknown>;
   private resizeObserver?: ResizeObserver;
   private readonly lineGenerator = d3.line<Point>().curve(d3.curveStepAfter);
+  private pendingSample = true;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    this.buildDemoCapture();
+    if (this.pendingSample && !this.hasData) {
+      this.loadTrace(createSampleTrace());
+    }
     this.measurePlot();
     this.resizePlot();
     this.enablePan();
-
-    this.resizeObserver = new ResizeObserver(() => {
-      this.measurePlot();
-      this.resizePlot();
-    });
-    this.resizeObserver.observe(this.waveformContainer.nativeElement);
+    this.observeSize();
   }
 
   ngOnDestroy(): void {
@@ -107,16 +114,53 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     return track.id;
   }
 
+  /**
+   * Single entry for plot data. Map a loaded .trace / ResultService
+   * response into TraceData and call this.
+   */
+  loadTrace(data: TraceData | null): void {
+    this.pendingSample = false;
+    this.clearPlot();
+
+    if (!data) {
+      this.hasData = false;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.minEdgeWidth = data.minEdgeWidth;
+    this.referenceTime = data.referenceTime;
+    this.fullDomain = [data.startTime, data.endTime];
+    this.applyZoomedWindow();
+
+    Object.entries(data.channels).forEach(([id, collection]) => {
+      this.waveforms.set(id, this.edgesToWaveform(collection));
+    });
+    Object.entries(data.buses).forEach(([id, packets]) => {
+      this.busMap.set(id, packets);
+    });
+
+    this.hasData = this.waveforms.size > 0;
+    this.measurePlot();
+    this.resizePlot();
+    this.cdr.markForCheck();
+  }
+
   onTool(tool: PlotTool, event: MouseEvent): void {
     event.stopPropagation();
+    if (!this.hasData && tool !== 'snapshot') {
+      return;
+    }
 
     switch (tool) {
       case 'snapshot':
         this.capturePlot();
         break;
       case 'fit':
-        this.fitView();
+        this.start = this.fullDomain[0];
+        this.stop = this.fullDomain[1];
         this.activeTool = 'fit';
+        this.resizePlot();
         break;
       case 'zoomIn':
         this.clearZoom();
@@ -163,7 +207,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   waveformMousedown(event: MouseEvent): void {
-    if (event.button !== 0) {
+    if (!this.hasData || event.button !== 0) {
       return;
     }
 
@@ -175,7 +219,12 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       this.overlayWidth = 0;
       event.stopPropagation();
     } else if (this.activeTool === 'zoomOut') {
-      this.zoomAround(x, 4);
+      const range = this.stop - this.start;
+      const t = this.xScale.invert(x);
+      this.start = t - range * 2;
+      this.stop = t + range * 2;
+      this.clampWindow();
+      this.resizePlot();
       event.stopPropagation();
     } else if (this.activeTool === 'cursor' && this.cursorEnabled) {
       this.cursorX = x;
@@ -220,19 +269,34 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     event.stopPropagation();
   }
 
-  private zoomAround(pixelX: number, factor: number): void {
-    const visibleRange = this.stop - this.start;
-    const position = this.xScale.invert(pixelX);
-    this.start = position - (visibleRange * factor) / 2;
-    this.stop = position + (visibleRange * factor) / 2;
-    this.clampWindow();
-    this.resizePlot();
+  waveYScale(trackIndex: number): d3.ScaleLinear<number, number> {
+    const top = trackIndex * this.laneHeight + 6;
+    const bottom = top + this.waveBandHeight(this.tracks[trackIndex]);
+    return d3.scaleLinear().domain([-0.12, 1.12]).range([bottom, top]);
   }
 
-  private fitView(): void {
-    this.start = this.fullDomain[0];
-    this.stop = this.fullDomain[1];
-    this.resizePlot();
+  decodeYScale(trackIndex: number): d3.ScaleLinear<number, number> {
+    const top = trackIndex * this.laneHeight + this.waveBandHeight(this.tracks[trackIndex]) + 4;
+    const bottom = (trackIndex + 1) * this.laneHeight - 6;
+    return d3.scaleLinear().domain([-0.1, 1.1]).range([bottom, top]);
+  }
+
+  private waveBandHeight(track: PlotTrack): number {
+    return track.kind === 'bus' ? this.laneHeight * 0.55 : this.laneHeight - 12;
+  }
+
+  private edgesToWaveform(collection: EdgeCollection): Point[] {
+    return toRawPoints(collection.firstEdgeRise, collection.edges);
+  }
+
+  private applyZoomedWindow(): void {
+    const [begin, end] = this.fullDomain;
+    this.start = begin + this.minEdgeWidth * 80;
+    this.stop = this.start + this.minEdgeWidth * 140;
+    if (this.stop > end) {
+      this.start = begin;
+      this.stop = Math.min(end, begin + this.minEdgeWidth * 140);
+    }
   }
 
   private clampWindow(): void {
@@ -244,25 +308,40 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       this.stop = end;
     }
     if (this.stop <= this.start) {
-      this.stop = Math.min(end, this.start + this.minEdgeWidth * 80);
+      this.stop = Math.min(end, this.start + this.minEdgeWidth * 40);
     }
+  }
+
+  private clearPlot(): void {
+    this.waveforms.clear();
+    this.busMap.clear();
+    this.wavePaths.clear();
+    this.busPolygons.clear();
+    this.markers = [];
+    this.flags = [];
+    this.cursorX = -1;
   }
 
   private clearZoom(): void {
-    if (this.zoomBehavior) {
-      d3.select(this.waveformsvg.nativeElement).on('.zoom', null);
+    const svg = this.waveformsvg?.nativeElement;
+    if (this.zoomBehavior && svg) {
+      d3.select(svg).on('.zoom', null);
       this.zoomBehavior = undefined;
+      d3.select(svg).select('g.zoom-content').attr('transform', null);
     }
-    d3.select(this.waveformsvg.nativeElement).select('g.zoom-content').attr('transform', null);
   }
 
   private enablePan(): void {
+    const svg = this.waveformsvg?.nativeElement;
+    if (!svg || !this.hasData) {
+      return;
+    }
     this.clearZoom();
     this.zoomBehavior = d3
       .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 20])
+      .scaleExtent([0.1, 30])
       .on('zoom', event => {
-        d3.select(this.waveformsvg.nativeElement)
+        d3.select(svg)
           .select('g.zoom-content')
           .attr('transform', `translate(${event.transform.x},0) scale(${event.transform.k},1)`);
       })
@@ -272,50 +351,61 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
         this.stop = domain[1];
         this.clampWindow();
         this.resizePlot();
-        d3.select(this.waveformsvg.nativeElement).select('g.zoom-content').attr('transform', null);
-        this.zoomBehavior?.transform(d3.select(this.waveformsvg.nativeElement), d3.zoomIdentity);
+        d3.select(svg).select('g.zoom-content').attr('transform', null);
+        this.zoomBehavior?.transform(d3.select(svg), d3.zoomIdentity);
       });
+    d3.select(svg).call(this.zoomBehavior);
+  }
 
-    d3.select(this.waveformsvg.nativeElement).call(this.zoomBehavior);
+  private observeSize(): void {
+    const host = this.waveformContainer?.nativeElement;
+    if (!host) {
+      return;
+    }
+    this.resizeObserver = new ResizeObserver(() => {
+      this.measurePlot();
+      this.resizePlot();
+    });
+    this.resizeObserver.observe(host);
   }
 
   private measurePlot(): void {
-    const rect = this.waveformContainer.nativeElement.getBoundingClientRect();
+    const rect = this.waveformContainer?.nativeElement.getBoundingClientRect();
+    if (!rect) {
+      return;
+    }
     this.plotWidth = Math.max(240, rect.width);
     this.plotHeight = Math.max(240, rect.height);
     this.laneHeight = (this.plotHeight - this.axisHeight) / this.tracks.length;
   }
 
   private resizePlot(): void {
+    if (!this.hasData) {
+      return;
+    }
+
     const waveWidth = Math.max(1, this.plotWidth);
     this.xScale = d3.scaleLinear().domain([this.start, this.stop]).range([0, waveWidth]);
-
     const visibleStart = 2 * this.start - this.stop;
     const visibleStop = 2 * this.stop - this.start;
 
     this.tracks.forEach((track, index) => {
-      const yScale = d3
-        .scaleLinear()
-        .domain([-0.15, 1.15])
-        .range([(index + 1) * this.laneHeight - 10, index * this.laneHeight + 10]);
-
+      const yScale = this.waveYScale(index);
       const waveform = this.waveforms.get(track.id) ?? [];
       this.lineGenerator.x(d => this.xScale(d.x)).y(d => yScale(d.y));
       const points = toPoints(waveform, visibleStart, visibleStop, this.fullDomain);
-      const path = this.lineGenerator(points) ?? '';
+      this.wavePaths.set(track.id, this.lineGenerator(points) ?? '');
 
-      if (track.kind === 'channel') {
-        this.channelPaths.set(track.id, path);
-      } else {
-        this.busWavePaths.set(track.id, path);
-        const buses = this.busMap.get(track.id) ?? [];
+      if (track.kind === 'bus') {
+        const decodeScale = this.decodeYScale(index);
+        const packets = this.busMap.get(track.id) ?? [];
         this.busPolygons.set(
           track.id,
-          buses
+          packets
             .filter(packet => packet.EndTime >= this.start && packet.StartTime <= this.stop)
             .map(packet => ({
-              center: BusExtensions.getPolygonCenter(packet, this.xScale, yScale),
-              path: BusExtensions.getPolygon(packet, this.xScale, yScale),
+              center: BusExtensions.getPolygonCenter(packet, this.xScale, decodeScale),
+              path: BusExtensions.getPolygon(packet, this.xScale, decodeScale),
               content: packet.Content,
               startTime: packet.StartTime,
               endTime: packet.EndTime
@@ -328,54 +418,18 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.gridLines = this.gridEnabled
       ? Array.from({ length: lineCount }, (_, i) => {
           const x = ((i + 1) * waveWidth) / (lineCount + 1);
-          return { x, label: toEngineeringTime(this.xScale.invert(x) - this.fullDomain[0]) };
+          return { x, label: toEngineeringTime(this.xScale.invert(x) - this.referenceTime) };
         })
       : [];
 
     this.cdr.markForCheck();
   }
 
-  /** I3C-style edges -> 0/1 points. Zoomed vs unzoomed is only xScale domain. */
-  private buildDemoCapture(): void {
-    this.minEdgeWidth = 40e-9;
-    const start = 0;
-    const stop = 8e-6;
-    this.fullDomain = [start, stop];
-    this.start = start + 1.2e-6;
-    this.stop = start + 1.85e-6;
-
-    this.tracks.forEach(track => {
-      const edges: number[] = [];
-      let t = start;
-      const period = track.kind === 'channel' ? this.minEdgeWidth * 2.2 : this.minEdgeWidth * 8;
-      while (t < stop) {
-        t += period;
-        edges.push(t);
-      }
-      this.waveforms.set(track.id, toRawPoints(true, edges));
-    });
-
-    const busLabelsA = ['17', 'D', 'S', '000000000001'];
-    const busLabelsB = ['2A', 'D', 'S', '000000001010'];
-    this.busMap.set('busA', this.buildPackets(start, stop, busLabelsA, 0));
-    this.busMap.set('busB', this.buildPackets(start, stop, busLabelsB, this.minEdgeWidth * 3));
-  }
-
-  private buildPackets(start: number, stop: number, labels: string[], offset: number): PacketBus[] {
-    const packets: PacketBus[] = [];
-    let t = start + offset;
-    let i = 0;
-    while (t < stop) {
-      const width = this.minEdgeWidth * (10 + (i % 3) * 6);
-      packets.push({ StartTime: t, EndTime: t + width, Content: labels[i % labels.length] });
-      t += width + this.minEdgeWidth * 4;
-      i++;
-    }
-    return packets;
-  }
-
   private capturePlot(): void {
-    const svg = this.waveformsvg.nativeElement;
+    const svg = this.waveformsvg?.nativeElement;
+    if (!svg) {
+      return;
+    }
     const clone = svg.cloneNode(true) as SVGSVGElement;
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
     const blob = new Blob([new XMLSerializer().serializeToString(clone)], {

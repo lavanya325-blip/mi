@@ -182,6 +182,24 @@
   stroke-width: 0.6;
 }
 
+.status-link {
+  stroke: #71717A;
+  stroke-width: 0.7;
+  stroke-dasharray: 2 3;
+}
+
+.empty-state {
+  flex: 1;
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #A1A1AA;
+  font-size: 13px;
+  background: #1F1F22;
+  border: 0.5px solid #09090B;
+}
+
 .bus-text {
   fill: #FFFFFF;
   font-size: 10px;
