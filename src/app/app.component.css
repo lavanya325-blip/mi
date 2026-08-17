@@ -19,23 +19,6 @@ body {
   height: 100vh;
 
   min-height: 0;
-
-  /* MIL surfaces. I3C globals already own --color-primary / --color-white. */
-  --surface-sidebar: #242426;
-  --surface-workspace: #27272A;
-  --border-subtle: #09090B;
-  --text-primary: #F4F4F5;
-  --text-secondary: #D4D4D8;
-}
-
-
-:host-context(.light-theme) .container,
-:host-context([data-theme='light']) .container {
-  --surface-sidebar: #FFFFFF;
-  --surface-workspace: #FAFAFA;
-  --border-subtle: #A1A1AA;
-  --text-primary: #18181B;
-  --text-secondary: #3F3F46;
 }
 
 
@@ -62,7 +45,7 @@ body {
   min-width: 0;
   min-height: 0;
 
-  background: var(--surface-workspace);
+  background: var(--bg-color, #27272A);
 
   overflow: hidden;
 }
@@ -83,9 +66,9 @@ body {
 
   box-sizing: border-box;
 
-  background: var(--surface-sidebar);
+  background: var(--outer-block-bg, #242426);
 
-  border-right: 1px solid var(--border-subtle);
+  border-right: 1px solid var(--inner-block-border, #09090B);
 
   overflow: hidden;
 
@@ -108,9 +91,9 @@ body {
 
   padding: 20px 25px;
 
-  background: var(--surface-sidebar);
+  background: var(--outer-block-bg, #242426);
 
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--inner-block-border, #09090B);
 }
 
 
@@ -123,7 +106,7 @@ body {
 
   line-height: 20px;
 
-  color: var(--text-primary);
+  color: var(--color-text, #F4F4F5);
 
   margin-bottom: 36px;
 }
@@ -147,7 +130,7 @@ body {
 
   line-height: 20px;
 
-  color: var(--text-secondary);
+  color: var(--color-text, #D4D4D8);
 }
 
 
@@ -167,7 +150,7 @@ body {
 
   line-height: 20px;
 
-  color: var(--text-secondary);
+  color: var(--color-text, #D4D4D8);
 }
 
 
@@ -185,7 +168,7 @@ body {
 
   box-sizing: border-box;
 
-  background: var(--surface-workspace);
+  background: var(--bg-color, #27272A);
 
   overflow: hidden;
 }

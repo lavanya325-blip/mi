@@ -1,17 +1,7 @@
-/* Frame 1171276452 — layout is dark-theme only (size/font never change).
-   Light/dark switch colours the same way as I3C toolbar: CSS variables. */
+/* Frame 1171276452 — size and font stay fixed (dark layout).
+   Colours come from I3C src/styles.css (:root = light, .dark-mode = dark). */
 
 :host {
-  --import-title-color: var(--color-primary, #7EB6FF);
-  --import-label-color: #D4D4D8;
-  --import-border: #000000;
-  --import-input-bg: #18181B;
-  --import-input-fg: #F4F4F5;
-  --import-input-border: #3F3F46;
-  --import-input-placeholder: #8A8A8A;
-  --import-browse-bg: var(--color-primary, #2F80ED);
-  --import-browse-fg: var(--color-white, #FFFFFF);
-
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -20,24 +10,13 @@
   gap: 12px;
   width: 255px;
   height: 196px;
-  border-top: 1px solid var(--import-border);
+  border-top: 1px solid var(--inner-block-border);
   flex: none;
   order: 8;
   align-self: stretch;
   flex-grow: 0;
   font-family: 'Roboto', sans-serif;
-  color: var(--import-label-color);
-}
-
-:host-context(.light-theme),
-:host-context([data-theme='light']) {
-  --import-title-color: var(--color-primary, #1A3881);
-  --import-label-color: #3F3F46;
-  --import-border: #A1A1AA;
-  --import-input-bg: var(--color-white, #FFFFFF);
-  --import-input-fg: #18181B;
-  --import-input-border: #D4D4D8;
-  --import-input-placeholder: #A1A1AA;
+  color: var(--color-text);
 }
 
 .import-section {
@@ -51,7 +30,7 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 20px;
-  color: var(--import-title-color);
+  color: var(--btn-bg);
 }
 
 .import-field {
@@ -68,7 +47,7 @@
   font-size: 12px;
   font-weight: 400;
   line-height: 16px;
-  color: var(--import-label-color);
+  color: var(--color-text);
 }
 
 .file-row {
@@ -87,8 +66,8 @@
   padding: 0;
   border: none;
   border-radius: 2px;
-  background: var(--import-browse-bg);
-  color: var(--import-browse-fg);
+  background: var(--btn-bg);
+  color: #ffffff;
   cursor: pointer;
   flex: none;
   display: flex;
@@ -97,11 +76,11 @@
 }
 
 .browse-btn:hover {
-  filter: brightness(1.08);
+  background: var(--color-secondary-dark-2);
 }
 
 .browse-btn:focus-visible {
-  outline: 1px solid var(--import-browse-bg);
+  outline: 1px solid var(--btn-bg);
   outline-offset: 1px;
 }
 
@@ -119,22 +98,22 @@
   min-width: 0;
   height: 24px;
   padding: 0 8px;
-  border: 1px solid var(--import-input-border);
+  border: 1px solid var(--inner-block-border);
   border-radius: 2px;
-  background: var(--import-input-bg);
-  color: var(--import-input-fg);
+  background: var(--input-second-bg);
+  color: var(--color-text);
   font-family: 'Roboto', sans-serif;
   font-size: 12px;
   line-height: 24px;
 }
 
 .path-input::placeholder {
-  color: var(--import-input-placeholder);
+  color: var(--color-gray-dark-2);
 }
 
 .path-input:focus {
   outline: none;
-  border-color: var(--import-browse-bg);
+  border-color: var(--btn-bg);
 }
 
 .hidden-file-input {
