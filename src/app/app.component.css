@@ -56,9 +56,9 @@ body {
    ========================================================= */
 
 .left-panel {
-  width: 329px;
+  width: 255px;
 
-  min-width: 329px;
+  min-width: 255px;
 
   height: 100%;
 
@@ -95,4 +95,30 @@ body {
   background: var(--bg-color, #27272A);
 
   overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+}
+
+
+/* =========================================================
+   RIGHT PANEL (Post Analysis / Export)
+   ========================================================= */
+
+.right-panel {
+  width: 280px;
+
+  min-width: 280px;
+
+  height: 100%;
+
+  flex-shrink: 0;
+
+  box-sizing: border-box;
+
+  background: var(--outer-block-bg, #242426);
+
+  border-left: 1px solid var(--inner-block-border, #09090B);
+
+  overflow: auto;
 }

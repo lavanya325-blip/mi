@@ -1,8 +1,15 @@
-<section class="plot-view">
+<section class="plot-view" [class.is-expanded]="isExpanded">
   <header class="plot-header">
     <div class="plot-title">Plot View</div>
     <div class="plot-header-actions">
-      <button type="button" class="icon-btn" title="Expand" aria-label="Expand">
+      <button
+        type="button"
+        class="icon-btn"
+        [class.is-active]="isExpanded"
+        title="Zoom plot and show operations"
+        aria-label="Zoom plot and show operations"
+        (click)="toggleExpanded()"
+      >
         <svg viewBox="0 0 16 16" aria-hidden="true">
           <path d="M2 6V2h4M10 2h4v4M14 10v4h-4M6 14H2v-4" fill="none" stroke="currentColor" stroke-width="1.4"/>
         </svg>
@@ -15,7 +22,12 @@
     </div>
   </header>
 
-  <div class="manipulation-tools" role="toolbar" aria-label="Plot operations">
+  <div
+    class="manipulation-tools"
+    *ngIf="isExpanded"
+    role="toolbar"
+    aria-label="Plot operations"
+  >
     <button
       *ngFor="let tool of tools"
       type="button"
@@ -49,7 +61,7 @@
 
   <div class="plot-body" *ngIf="hasData">
     <div class="lane-rail">
-      <div class="lane-label" *ngFor="let track of tracks; trackBy: trackTrack" [style.height.px]="laneHeight">
+      <div class="lane-label" *ngFor="let track of tracks; trackBy: trackTrack" [style.height.px]="laneHeight(track)">
         <span class="lane-bar" [style.background]="track.color"></span>
         <div class="lane-text">
           <div class="lane-name">{{ track.name }}</div>
@@ -84,8 +96,8 @@
             *ngFor="let track of tracks; let i = index; trackBy: trackTrack"
             x1="0"
             [attr.x2]="plotWidth"
-            [attr.y1]="(i + 1) * laneHeight"
-            [attr.y2]="(i + 1) * laneHeight"
+            [attr.y1]="laneTop(i + 1)"
+            [attr.y2]="laneTop(i + 1)"
             class="grid-line lane-sep"
           ></line>
         </g>

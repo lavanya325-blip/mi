@@ -56,6 +56,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   ];
 
   hasData = false;
+  isExpanded = false;
   activeTool: PlotTool = 'pan';
   gridEnabled = true;
   cursorEnabled = false;
@@ -73,8 +74,9 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   plotWidth = 800;
   plotHeight = 520;
-  laneHeight = 80;
   readonly axisHeight = 24;
+  readonly waveHeight = 52;
+  readonly decodeHeight = 40;
 
   xScale!: d3.ScaleLinear<number, number>;
   wavePaths = new Map<string, string>();
@@ -101,7 +103,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     }
     this.measurePlot();
     this.resizePlot();
-    this.enablePan();
     this.observeSize();
   }
 
@@ -112,6 +113,41 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   trackTrack(_index: number, track: PlotTrack): string {
     return track.id;
+  }
+
+  toggleExpanded(): void {
+    this.isExpanded = !this.isExpanded;
+    if (this.isExpanded) {
+      this.applyZoomedWindow();
+      this.activeTool = 'pan';
+    } else {
+      this.start = this.fullDomain[0];
+      this.stop = this.fullDomain[1];
+      this.clearZoom();
+    }
+    this.cdr.detectChanges();
+    this.measurePlot();
+    this.resizePlot();
+    if (this.isExpanded) {
+      this.enablePan();
+    }
+    this.cdr.markForCheck();
+  }
+
+  laneHeight(track: PlotTrack): number {
+    return track.kind === 'bus' ? this.waveHeight + this.decodeHeight : this.waveHeight;
+  }
+
+  laneTop(trackIndex: number): number {
+    let top = 0;
+    for (let i = 0; i < trackIndex; i++) {
+      top += this.laneHeight(this.tracks[i]);
+    }
+    return top;
+  }
+
+  contentHeight(): number {
+    return this.laneTop(this.tracks.length) + this.axisHeight;
   }
 
   /**
@@ -131,7 +167,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.minEdgeWidth = data.minEdgeWidth;
     this.referenceTime = data.referenceTime;
     this.fullDomain = [data.startTime, data.endTime];
-    this.applyZoomedWindow();
+    this.start = data.startTime;
+    this.stop = data.endTime;
 
     Object.entries(data.channels).forEach(([id, collection]) => {
       this.waveforms.set(id, this.edgesToWaveform(collection));
@@ -141,14 +178,16 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     });
 
     this.hasData = this.waveforms.size > 0;
+    this.cdr.detectChanges();
     this.measurePlot();
     this.resizePlot();
+    this.enablePan();
     this.cdr.markForCheck();
   }
 
   onTool(tool: PlotTool, event: MouseEvent): void {
     event.stopPropagation();
-    if (!this.hasData && tool !== 'snapshot') {
+    if (!this.hasData || !this.isExpanded) {
       return;
     }
 
@@ -207,7 +246,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   waveformMousedown(event: MouseEvent): void {
-    if (!this.hasData || event.button !== 0) {
+    if (!this.hasData || !this.isExpanded || event.button !== 0) {
       return;
     }
 
@@ -270,19 +309,15 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   waveYScale(trackIndex: number): d3.ScaleLinear<number, number> {
-    const top = trackIndex * this.laneHeight + 6;
-    const bottom = top + this.waveBandHeight(this.tracks[trackIndex]);
+    const top = this.laneTop(trackIndex) + 6;
+    const bottom = top + this.waveHeight - 12;
     return d3.scaleLinear().domain([-0.12, 1.12]).range([bottom, top]);
   }
 
   decodeYScale(trackIndex: number): d3.ScaleLinear<number, number> {
-    const top = trackIndex * this.laneHeight + this.waveBandHeight(this.tracks[trackIndex]) + 4;
-    const bottom = (trackIndex + 1) * this.laneHeight - 6;
+    const top = this.laneTop(trackIndex) + this.waveHeight + 4;
+    const bottom = this.laneTop(trackIndex) + this.laneHeight(this.tracks[trackIndex]) - 6;
     return d3.scaleLinear().domain([-0.1, 1.1]).range([bottom, top]);
-  }
-
-  private waveBandHeight(track: PlotTrack): number {
-    return track.kind === 'bus' ? this.laneHeight * 0.55 : this.laneHeight - 12;
   }
 
   private edgesToWaveform(collection: EdgeCollection): Point[] {
@@ -333,7 +368,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   private enablePan(): void {
     const svg = this.waveformsvg?.nativeElement;
-    if (!svg || !this.hasData) {
+    if (!svg || !this.hasData || !this.isExpanded) {
       return;
     }
     this.clearZoom();
@@ -375,8 +410,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       return;
     }
     this.plotWidth = Math.max(240, rect.width);
-    this.plotHeight = Math.max(240, rect.height);
-    this.laneHeight = (this.plotHeight - this.axisHeight) / this.tracks.length;
+    this.plotHeight = this.contentHeight();
   }
 
   private resizePlot(): void {
