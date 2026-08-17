@@ -1,0 +1,191 @@
+html,
+body {
+  margin: 0;
+  padding: 0;
+
+  width: 100%;
+  height: 100%;
+
+  overflow: hidden;
+}
+
+
+.container {
+  display: flex;
+
+  flex-direction: column;
+
+  width: 100%;
+  height: 100vh;
+
+  min-height: 0;
+
+  /* MIL surfaces. I3C globals already own --color-primary / --color-white. */
+  --surface-sidebar: #242426;
+  --surface-workspace: #27272A;
+  --border-subtle: #09090B;
+  --text-primary: #F4F4F5;
+  --text-secondary: #D4D4D8;
+}
+
+
+:host-context(.light-theme) .container,
+:host-context([data-theme='light']) .container {
+  --surface-sidebar: #FFFFFF;
+  --surface-workspace: #FAFAFA;
+  --border-subtle: #A1A1AA;
+  --text-primary: #18181B;
+  --text-secondary: #3F3F46;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.site-header {
+  flex-shrink: 0;
+}
+
+
+/* =========================================================
+   MAIN WORKSPACE
+   ========================================================= */
+
+.workspace {
+  display: flex;
+
+  flex: 1;
+
+  width: 100%;
+
+  min-width: 0;
+  min-height: 0;
+
+  background: var(--surface-workspace);
+
+  overflow: hidden;
+}
+
+
+/* =========================================================
+   LEFT PANEL
+   ========================================================= */
+
+.left-panel {
+  width: 329px;
+
+  min-width: 329px;
+
+  height: 100%;
+
+  flex-shrink: 0;
+
+  box-sizing: border-box;
+
+  background: var(--surface-sidebar);
+
+  border-right: 1px solid var(--border-subtle);
+
+  overflow: hidden;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+
+/* =========================================================
+   CONFIGURATION
+   ========================================================= */
+
+.configuration-area {
+  width: 100%;
+
+  height: 182px;
+
+  box-sizing: border-box;
+
+  padding: 20px 25px;
+
+  background: var(--surface-sidebar);
+
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+
+.configuration-title {
+  font-family: 'Roboto', sans-serif;
+
+  font-size: 16px;
+
+  font-weight: 600;
+
+  line-height: 20px;
+
+  color: var(--text-primary);
+
+  margin-bottom: 36px;
+}
+
+
+.source-section {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 14px;
+}
+
+
+.source-title {
+  font-family: 'Roboto', sans-serif;
+
+  font-size: 14px;
+
+  font-weight: 500;
+
+  line-height: 20px;
+
+  color: var(--text-secondary);
+}
+
+
+.source-options {
+  display: flex;
+
+  gap: 28px;
+}
+
+
+.source-options span {
+  font-family: 'Roboto', sans-serif;
+
+  font-size: 14px;
+
+  font-weight: 400;
+
+  line-height: 20px;
+
+  color: var(--text-secondary);
+}
+
+
+/* =========================================================
+   PLOT AREA
+   ========================================================= */
+
+.plot-area {
+  flex: 1;
+
+  min-width: 0;
+  min-height: 0;
+
+  height: 100%;
+
+  box-sizing: border-box;
+
+  background: var(--surface-workspace);
+
+  overflow: hidden;
+}

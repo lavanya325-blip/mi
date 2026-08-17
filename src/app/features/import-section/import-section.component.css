@@ -1,29 +1,66 @@
-/* Frame 1171276452 — applied on :host so left-panel flex sees these values */
-:host {
-  box-sizing: border-box;
+/* Import section
+   Dark  — Figma Frame 1171276452
+   Light — Figma Frame 1171276523
+   Colors use I3C-style CSS variables with MIL fallbacks.
+*/
 
-  /* Auto layout */
+:host {
+  --import-gap: 12px;
+  --import-browse-bg: var(--color-primary, #2F80ED);
+  --import-browse-fg: var(--color-white, #FFFFFF);
+
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  padding: 4px;
-  gap: 12px;
+  padding: var(--import-padding);
+  gap: var(--import-gap);
 
-  width: 255px;
-  height: 196px;
-  border-top: 1px solid #000000;
+  width: var(--import-width);
+  height: var(--import-height);
 
-  /* Inside auto layout */
+  border-top: 1px solid var(--import-border);
+
   flex: none;
   order: 8;
   align-self: stretch;
   flex-grow: 0;
+
+  font-family: 'Roboto', sans-serif;
+  color: var(--import-label-color);
 }
 
-/*
-  Children of the frame become flex items of :host,
-  so padding/gap/align-items match Figma (not a nested wrapper).
-*/
+/* Frame 1171276452 — dark */
+:host,
+:host-context(.dark-theme),
+:host-context([data-theme='dark']) {
+  --import-padding: 4px;
+  --import-width: 255px;
+  --import-height: 196px;
+  --import-border: #000000;
+  --import-title-color: var(--color-primary, #7EB6FF);
+  --import-label-color: #D4D4D8;
+  --import-input-bg: #18181B;
+  --import-input-fg: #F4F4F5;
+  --import-input-border: #3F3F46;
+  --import-input-placeholder: #8A8A8A;
+}
+
+/* Frame 1171276523 — light */
+:host-context(.light-theme),
+:host-context([data-theme='light']) {
+  --import-padding: 12px 4px;
+  --import-width: 297px;
+  --import-height: 216px;
+  --import-border: #A1A1AA;
+  --import-title-color: #18181B;
+  --import-label-color: #3F3F46;
+  --import-input-bg: var(--color-white, #FFFFFF);
+  --import-input-fg: #18181B;
+  --import-input-border: #D4D4D8;
+  --import-input-placeholder: #A1A1AA;
+}
+
 .import-section {
   display: contents;
 }
@@ -32,10 +69,10 @@
   box-sizing: border-box;
   flex: none;
   width: 100%;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 16px;
-  color: #7eb6ff;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+  color: var(--import-title-color);
 }
 
 .import-field {
@@ -50,8 +87,9 @@
 
 .field-label {
   font-size: 12px;
-  line-height: 14px;
-  color: #d0d0d0;
+  font-weight: 400;
+  line-height: 16px;
+  color: var(--import-label-color);
 }
 
 .file-row {
@@ -70,8 +108,8 @@
   padding: 0;
   border: none;
   border-radius: 2px;
-  background: #2f80ed;
-  color: #ffffff;
+  background: var(--import-browse-bg);
+  color: var(--import-browse-fg);
   cursor: pointer;
   flex: none;
   display: flex;
@@ -80,11 +118,11 @@
 }
 
 .browse-btn:hover {
-  background: #4a93f5;
+  filter: brightness(1.08);
 }
 
 .browse-btn:focus-visible {
-  outline: 1px solid #9ecbff;
+  outline: 1px solid var(--import-browse-bg);
   outline-offset: 1px;
 }
 
@@ -102,21 +140,22 @@
   min-width: 0;
   height: 24px;
   padding: 0 8px;
-  border: 1px solid #3a3a3a;
+  border: 1px solid var(--import-input-border);
   border-radius: 2px;
-  background: #1a1a1a;
-  color: #f2f2f2;
+  background: var(--import-input-bg);
+  color: var(--import-input-fg);
+  font-family: 'Roboto', sans-serif;
   font-size: 12px;
   line-height: 24px;
 }
 
 .path-input::placeholder {
-  color: #8a8a8a;
+  color: var(--import-input-placeholder);
 }
 
 .path-input:focus {
   outline: none;
-  border-color: #2f80ed;
+  border-color: var(--import-browse-bg);
 }
 
 .hidden-file-input {
