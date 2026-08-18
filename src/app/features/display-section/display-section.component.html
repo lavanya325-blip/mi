@@ -14,10 +14,12 @@
         [attr.aria-expanded]="menuOpen"
         (click)="toggleMenu(); $event.stopPropagation()"
       >
-        <span>{{ selectedView }}</span>
-        <svg class="view-select-caret" viewBox="0 0 10 6" aria-hidden="true">
-          <path fill="currentColor" d="M1 1.25 5 5.25 9 1.25"/>
-        </svg>
+        <span class="placeholder-text">{{ selectedView }}</span>
+        <span class="state-layer" aria-hidden="true">
+          <svg viewBox="0 0 10 6">
+            <path fill="currentColor" d="M1 1.25 5 5.25 9 1.25"/>
+          </svg>
+        </span>
       </button>
 
       <ul

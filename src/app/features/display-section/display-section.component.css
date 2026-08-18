@@ -1,9 +1,6 @@
-/* Frame 1171276468 — Figma size/type stay fixed.
-   Colours use I3C tokens from styles.css so the toolbar theme
-   toggle applies after merge:
-     :root            = light
-     body.dark-mode   = dark
-   Hex after the comma is the Figma dark value when tokens are missing. */
+/* Frame 1171276468
+   Colours: I3C tokens so toolbar light/dark applies after merge.
+   Hex after the comma = Figma dark (300 / #D4D4D8). */
 
 :host {
   box-sizing: border-box;
@@ -27,7 +24,7 @@
   display: contents;
 }
 
-/* Subgroup — M3/label/medium */
+/* Subgroup — Display title, M3/label/medium */
 .section-title {
   box-sizing: border-box;
   width: 247px;
@@ -50,48 +47,50 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 8px;
   width: 247px;
+  height: 24px;
   flex: none;
   order: 1;
   align-self: stretch;
   flex-grow: 0;
 }
 
+/* Subgroup — View, M3/label/medium */
 .view-label {
-  flex: none;
+  box-sizing: border-box;
+  width: 28px;
+  height: 16px;
   font-family: 'Roboto', sans-serif;
   font-style: normal;
-  font-weight: 400;
+  font-weight: 500;
   font-size: 12px;
   line-height: 16px;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.5px;
   color: var(--color-text, #D4D4D8);
+  flex: none;
+  order: 0;
+  flex-grow: 0;
 }
 
 .view-select-wrap {
   position: relative;
   flex: 1 1 auto;
   min-width: 0;
+  height: 24px;
 }
 
 .view-select {
   box-sizing: border-box;
   display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
   height: 24px;
-  padding: 0 8px;
-  border: 1px solid var(--inner-block-border, #71717A);
+  padding: 0;
+  border: 1px solid var(--inner-block-border, #000000);
   border-radius: 2px;
   background-color: var(--input-second-bg, #27272A);
   color: var(--color-text, #D4D4D8);
-  font-family: 'Roboto', sans-serif;
-  font-size: 12px;
-  line-height: 24px;
-  letter-spacing: 0.4px;
-  text-align: left;
   cursor: pointer;
   forced-color-adjust: none;
 }
@@ -102,12 +101,50 @@
   border-color: var(--btn-bg, #1480c3);
 }
 
-.view-select-caret {
+/* placeholder-text — M3/body/small 0.4 */
+.placeholder-text {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 16px;
+  margin-left: 8px;
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.4px;
+  color: var(--color-text, #D4D4D8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  order: 1;
+  flex-grow: 1;
+}
+
+/* state-layer — dropdown chevron */
+.state-layer {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 4px;
+  gap: 4px;
+  width: 20px;
+  height: 24px;
+  color: var(--color-text, #D4D4D8);
+  flex: none;
+  order: 2;
+  flex-grow: 0;
+}
+
+.state-layer svg {
+  display: block;
   width: 10px;
   height: 6px;
-  flex: none;
-  margin-left: 8px;
-  color: var(--color-text, #D4D4D8);
 }
 
 .view-menu {
@@ -119,7 +156,7 @@
   margin: 0;
   padding: 2px 0;
   list-style: none;
-  border: 1px solid var(--inner-block-border, #71717A);
+  border: 1px solid var(--inner-block-border, #000000);
   border-radius: 2px;
   background-color: var(--input-second-bg, #27272A);
   max-height: 120px;
@@ -127,16 +164,22 @@
 }
 
 .view-option {
-  padding: 4px 8px;
+  box-sizing: border-box;
+  height: 16px;
+  margin: 4px 8px;
   font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-weight: 400;
   font-size: 12px;
   line-height: 16px;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.4px;
   color: var(--color-text, #D4D4D8);
   cursor: pointer;
 }
 
 .view-option:hover,
 .view-option.is-selected {
-  background-color: var(--btn-bg, #3F3F46);
   color: var(--color-text, #F4F4F5);
 }
