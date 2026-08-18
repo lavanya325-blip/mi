@@ -14,7 +14,7 @@ import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import * as d3 from 'd3';
 import { BusPolygon, PacketBus, PlotTrack, Point } from './models/plot-track.model';
-import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
+import { EdgeCollection, TraceData } from './models/trace-data.model';
 import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
 import { BusExtensions } from './extensions/bus-extensions';
 
@@ -44,7 +44,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   @ViewChild('waveformContainer') waveformContainer?: ElementRef<HTMLElement>;
   @ViewChild('waveformsvg') waveformsvg?: ElementRef<SVGSVGElement>;
 
-  /** Later: bind imported trace. Until then sample data is used. */
+  /** Bind capture data from the backend / imported trace. Empty until then. */
   @Input()
   set capture(value: TraceData | null | undefined) {
     this.loadTrace(value ?? null);
@@ -116,16 +116,10 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   private referenceTime = 0;
   private resizeObserver?: ResizeObserver;
   private readonly lineGenerator = d3.line<Point>().curve(d3.curveStepAfter);
-  private pendingSample = true;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    if (this.pendingSample && !this.hasData) {
-      this.loadTrace(createSampleTrace());
-    }
-    this.measurePlot();
-    this.resizePlot();
     this.observeSize();
   }
 
@@ -198,7 +192,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
    * response into TraceData and call this.
    */
   loadTrace(data: TraceData | null): void {
-    this.pendingSample = false;
     this.clearPlot();
 
     if (!data) {
@@ -223,6 +216,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
     this.hasData = this.waveforms.size > 0;
     this.cdr.detectChanges();
+    this.observeSize();
     this.measurePlot();
     this.resizePlot();
     this.cdr.markForCheck();
@@ -574,6 +568,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   private observeSize(): void {
+    this.resizeObserver?.disconnect();
     const host = this.waveformContainer?.nativeElement;
     if (!host) {
       return;

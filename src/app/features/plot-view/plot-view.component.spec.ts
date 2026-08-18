@@ -19,9 +19,8 @@ describe('PlotViewComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should keep a compact wave with a 19px decode row under the bus', () => {
-    expect(component.decodeHeight).toBe(19);
-    expect(component.waveHeight).toBe(52);
+  it('should not plot a sample wave until backend data is loaded', () => {
+    expect(component.hasData).toBe(false);
   });
 
   it('should expose ten plot operations on the plot view', () => {

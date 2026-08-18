@@ -7,8 +7,8 @@ export interface EdgeCollection {
 }
 
 /**
- * Capture/trace payload. Replace createSampleTrace() with
- * ResultService / imported .trace file mapped into this type.
+ * Capture/trace payload from ResultService / imported .trace.
+ * Plot View stays empty until loadTrace() or [capture] is called.
  */
 export interface TraceData {
   referenceTime: number;
