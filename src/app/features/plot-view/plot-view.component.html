@@ -94,6 +94,8 @@
         [attr.height]="plotHeight"
         [style.cursor]="plotCursor()"
         (mousedown)="waveformMousedown($event)"
+        (mousemove)="waveformMousemove($event)"
+        (mouseup)="waveformMouseup($event)"
         (wheel)="waveformWheel($event)"
       >
         <g class="grid" *ngIf="gridEnabled">
@@ -169,6 +171,15 @@
           [attr.width]="overlayWidth"
           [attr.height]="plotHeight - axisHeight"
         ></rect>
+
+        <line
+          *ngIf="cursorEnabled && cursorX >= 0"
+          class="cursor-line"
+          [attr.x1]="cursorX"
+          [attr.x2]="cursorX"
+          y1="0"
+          [attr.y2]="plotHeight - axisHeight"
+        ></line>
 
         <g *ngFor="let time of cursorTimes">
           <line

@@ -45,9 +45,17 @@ describe('PlotViewComponent', () => {
     expect(component.gridEnabled).toBe(false);
     component.onTool('flag', event);
     expect(component.decodeEnabled).toBe(false);
-    component.onTool('pan', event);
+    component.onPanClick(event);
     expect(component.activeTool).toBe('pan');
     component.onTool('expand', event);
     expect(component.isFullscreen).toBe(true);
+  });
+
+  it('should expose I3C-compatible mouse handlers', () => {
+    expect(typeof component.waveformMousemove).toBe('function');
+    expect(typeof component.waveformMouseup).toBe('function');
+    expect(typeof component.SaveImage).toBe('function');
+    expect(component.cursorX).toBe(-1);
+    expect(component.markers).toEqual([]);
   });
 });

@@ -57,7 +57,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     { id: 'ch4', name: 'Channel 4', subtitle: 'Async', color: '#4ADE80', kind: 'channel' }
   ];
 
-  readonly tools: { id: PlotTool; label: string; order: number }[] = [
+  readonly tools: { id: string; label: string; order: number }[] = [
     { id: 'snapshot', label: 'Save image', order: 0 },
     { id: 'expand', label: 'Full screen', order: 1 },
     { id: 'select', label: 'Mouse', order: 2 },
@@ -72,12 +72,15 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   hasData = false;
   @HostBinding('class.is-fullscreen') isFullscreen = false;
-  activeTool: PlotTool = 'select';
+  activeTool: string = 'select';
   gridEnabled = true;
   decodeEnabled = true;
   cursorEnabled = false;
+  selectEnabled = false;
   cursorTimes: number[] = [];
   markerTimes: number[] = [];
+  /** Kept for older templates that still bind cursorX / markers / flags. */
+  flags: number[] = [];
 
   showOverlay = false;
   overlayX = 0;
@@ -222,7 +225,25 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.cdr.markForCheck();
   }
 
-  isToolLit(tool: PlotTool): boolean {
+  get hasValidData(): boolean {
+    return this.hasData;
+  }
+
+  get cursorX(): number {
+    if (!this.xScale || this.cursorTimes.length === 0) {
+      return -1;
+    }
+    return this.xScale(this.cursorTimes[this.cursorTimes.length - 1]);
+  }
+
+  get markers(): number[] {
+    if (!this.xScale) {
+      return [];
+    }
+    return this.markerTimes.map(time => this.xScale(time));
+  }
+
+  isToolLit(tool: string): boolean {
     if (tool === 'grid') {
       return this.gridEnabled;
     }
@@ -235,16 +256,19 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     if (tool === 'flag') {
       return this.decodeEnabled;
     }
+    if (tool === 'select') {
+      return this.activeTool === 'select' || this.selectEnabled;
+    }
     return this.activeTool === tool;
   }
 
-  onTool(tool: PlotTool, event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
+  onTool(tool: string, event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
 
     switch (tool) {
       case 'snapshot':
-        this.capturePlot();
+        this.SaveImage();
         break;
       case 'expand':
         this.toggleFullscreen();
@@ -263,18 +287,83 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
         this.cursorEnabled = true;
         break;
       case 'select':
+        this.activeTool = 'select';
+        this.selectEnabled = true;
+        this.cursorEnabled = false;
+        break;
       case 'zoomIn':
       case 'zoomOut':
       case 'pan':
       case 'move':
         this.activeTool = tool;
-        if (tool !== 'cursor') {
-          this.cursorEnabled = false;
-        }
+        this.selectEnabled = false;
+        this.cursorEnabled = false;
         break;
     }
 
     this.cdr.markForCheck();
+  }
+
+  /** I3C control names — same behavior as the Figma toolbar. */
+  onMouseEnableClick(event: Event): void {
+    this.onTool('select', event);
+  }
+
+  onZoomInClick(event: Event): void {
+    this.onTool('zoomIn', event);
+  }
+
+  onZoomOutClick(event: Event): void {
+    this.onTool('zoomOut', event);
+  }
+
+  onPanClick(event: Event): void {
+    this.onTool('pan', event);
+  }
+
+  onFitClick(event: Event): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.start = this.fullDomain[0];
+    this.stop = this.fullDomain[1];
+    this.clampWindow();
+    this.resizePlot();
+  }
+
+  onCursorEnableClick(_model: unknown, event?: Event): void {
+    this.onTool('cursor', event);
+  }
+
+  onEnableGrid(event: Event): void {
+    this.onTool('grid', event);
+  }
+
+  onBitsClick(event: Event): void {
+    this.onTool('flag', event);
+  }
+
+  SaveImage(): void {
+    this.capturePlot();
+  }
+
+  waveformMousemove(event: MouseEvent): void {
+    this.onDocumentMove(event);
+  }
+
+  waveformMouseup(event: MouseEvent): void {
+    this.onDocumentUp(event);
+  }
+
+  waveform_mousedown(event: MouseEvent): void {
+    this.waveformMousedown(event);
+  }
+
+  waveform_mousemove(event: MouseEvent): void {
+    this.waveformMousemove(event);
+  }
+
+  waveform_mouseup(event: MouseEvent): void {
+    this.waveformMouseup(event);
   }
 
   waveformMousedown(event: MouseEvent): void {
