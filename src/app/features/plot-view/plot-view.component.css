@@ -126,6 +126,12 @@
   flex-grow: 0;
 }
 
+.tool-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
 .tool-btn mat-icon {
   width: 20px;
   height: 20px;

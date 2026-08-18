@@ -29,7 +29,17 @@
       (click)="onTool(tool.id, $event)"
       (mousedown)="$event.stopPropagation()"
     >
-      <mat-icon>{{ tool.icon }}</mat-icon>
+      <svg
+        *ngIf="tool.id === 'move'"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          fill="currentColor"
+          d="M15 9.5V6h2.5L12 .5 6.5 6H9v3.5H5.5V6L0 12l5.5 6v-3.5H9V18H6.5L12 23.5 17.5 18H15v-3.5h3.5V18L24 12l-5.5-6v3.5H15z"
+        />
+      </svg>
+      <mat-icon *ngIf="tool.id !== 'move'">{{ tool.icon }}</mat-icon>
     </button>
   </div>
 
