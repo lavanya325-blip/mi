@@ -15,6 +15,7 @@
   order: 7;
   align-self: stretch;
   flex-grow: 0;
+  overflow: hidden;
   margin-top: auto;
   font-family: 'Roboto', sans-serif;
   color: var(--color-text);
@@ -44,11 +45,19 @@
   flex: none;
 }
 
+.export-field.format-field {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+}
+
 .field-label {
   font-size: 12px;
   font-weight: 400;
-  line-height: 16px;
+  line-height: 12px;
   color: var(--color-text);
+  flex: none;
 }
 
 .file-row {
@@ -121,6 +130,8 @@
 }
 
 .format-select {
+  flex: 1 1 auto;
+  width: auto;
   padding: 0 24px 0 8px;
   background-color: var(--input-second-bg);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath fill='%23A1A1AA' d='M1 1.25 5 5.25 9 1.25'/%3E%3C/svg%3E");

@@ -15,6 +15,7 @@ import { PlotViewComponent } from './features/plot-view/plot-view.component';
 import { ImportSectionComponent } from './features/import-section/import-section.component';
 import { DisplaySectionComponent } from './features/display-section/display-section.component';
 import { ExportSectionComponent } from './features/export-section/export-section.component';
+import { PacketGridComponent } from './features/packet-grid/packet-grid.component';
 
 @Component({
   selector: 'app-root',
@@ -36,6 +37,7 @@ import { ExportSectionComponent } from './features/export-section/export-section
     ImportSectionComponent,
     DisplaySectionComponent,
     ExportSectionComponent,
+    PacketGridComponent,
   ],
 
   providers: [],
