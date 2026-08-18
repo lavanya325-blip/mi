@@ -47,7 +47,7 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 39px;
+  gap: 16px;
   width: 247px;
   height: 32px;
   flex: none;
@@ -73,10 +73,10 @@
   flex-grow: 0;
 }
 
-/* Frame 1171276449 — Listing Window field */
+/* Frame 1171276449 — field fills leftover width so the long option fits one line */
 .view-select-wrap {
   position: relative;
-  width: 180px;
+  width: 203px;
   height: 32px;
   flex: none;
   order: 1;
@@ -90,11 +90,13 @@
   flex-direction: row;
   align-items: center;
   padding: 0;
-  width: 180px;
+  width: 203px;
   height: 32px;
   border: 1px solid var(--inner-block-border, #000000);
   border-radius: 2px;
+  background-color: #27272A;
   background-color: var(--input-second-bg, #27272A);
+  color: #D4D4D8;
   color: var(--color-text, #D4D4D8);
   cursor: pointer;
   forced-color-adjust: none;
@@ -155,17 +157,21 @@
 .view-menu {
   position: absolute;
   left: 0;
-  right: 0;
+  right: auto;
   top: calc(100% + 2px);
   z-index: 20;
   margin: 0;
   padding: 2px 0;
   list-style: none;
+  min-width: 100%;
+  width: max-content;
   border: 1px solid var(--inner-block-border, #000000);
   border-radius: 2px;
+  background-color: #27272A;
   background-color: var(--input-second-bg, #27272A);
   max-height: 120px;
   overflow: auto;
+  white-space: nowrap;
 }
 
 .view-option {
@@ -182,6 +188,7 @@
   letter-spacing: 0.4px;
   color: var(--color-text, #D4D4D8);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .view-option:hover,
