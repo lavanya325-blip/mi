@@ -1,0 +1,103 @@
+<div class="tool-bar">
+
+  <div class="toolbar-left">
+    <button type="button" class="toolbar-icon-button" title="Options">
+      <mat-icon>tune</mat-icon>
+    </button>
+
+    <div class="toolbar-divider"></div>
+
+    <div class="toolbar-menu-item">
+      <span>Menu Item</span>
+      <mat-icon class="menu-arrow">play_arrow</mat-icon>
+    </div>
+
+    <button type="button" class="toolbar-icon-button" title="Trigger">
+      <mat-icon>bolt</mat-icon>
+    </button>
+
+    <div class="toolbar-menu-item">
+      <span>Menu Item</span>
+      <mat-icon class="menu-arrow">play_arrow</mat-icon>
+    </div>
+
+    <div class="toolbar-menu-item">
+      <span>Menu Item</span>
+      <mat-icon class="menu-arrow">play_arrow</mat-icon>
+    </div>
+
+    <button type="button" class="toolbar-icon-button blue-icon" title="Run">
+      <mat-icon>play_circle</mat-icon>
+    </button>
+
+    <button type="button" class="toolbar-icon-button" title="Upload">
+      <mat-icon>drive_folder_upload</mat-icon>
+    </button>
+
+    <button type="button" class="toolbar-icon-button" title="Settings">
+      <mat-icon>settings</mat-icon>
+    </button>
+  </div>
+
+  <div class="toolbar-middle">
+    <div class="toolbar-divider"></div>
+
+    <button type="button" class="toolbar-icon-button" title="Search">
+      <mat-icon>search</mat-icon>
+    </button>
+
+    <button type="button" class="toolbar-icon-button" title="Previous">
+      <mat-icon>arrow_circle_left</mat-icon>
+    </button>
+
+    <button type="button" class="toolbar-icon-button" title="Next">
+      <mat-icon>arrow_circle_right</mat-icon>
+    </button>
+  </div>
+
+  <div class="toolbar-right">
+    <div class="toolbar-divider"></div>
+
+    <button type="button" class="toolbar-icon-button" title="Webhook">
+      <mat-icon>webhook</mat-icon>
+    </button>
+
+    <div class="toolbar-switch">
+      <div class="switch-circle"></div>
+    </div>
+
+    <div class="plot-ops">
+      <button type="button" class="toolbar-icon-button large-icon" title="Camera" (click)="onPlotTool('snapshot')">
+        <mat-icon>camera_alt</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Expand" (click)="onPlotTool('expand')">
+        <mat-icon>open_in_full</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Mouse" (click)="onPlotTool('select')">
+        <mat-icon>mouse</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Zoom In" (click)="onPlotTool('zoomIn')">
+        <mat-icon>zoom_in</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Zoom Out" (click)="onPlotTool('zoomOut')">
+        <mat-icon>zoom_out</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Pan" (click)="onPlotTool('pan')">
+        <mat-icon>pan_tool</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Drag Pan" (click)="onPlotTool('move')">
+        <mat-icon>drag_pan</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Calendar" (click)="onPlotTool('cursor')">
+        <mat-icon>calendar_month</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Grid" (click)="onPlotTool('grid')">
+        <mat-icon>grid_3x3</mat-icon>
+      </button>
+      <button type="button" class="toolbar-icon-button large-icon" title="Table View" (click)="onPlotTool('flag')">
+        <mat-icon>table_chart</mat-icon>
+      </button>
+    </div>
+  </div>
+
+</div>

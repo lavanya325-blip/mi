@@ -12,10 +12,12 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
+import { Subscription } from 'rxjs';
 import { BusPolygon, PacketBus, PlotTrack, Point } from './models/plot-track.model';
 import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
 import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
 import { BusExtensions } from './extensions/bus-extensions';
+import { PlotCommandService } from './plot-command.service';
 
 /** Toolbar ids — keep this list here so templates type-check even if plot-track.model.ts is stale. */
 export type PlotTool =
@@ -56,19 +58,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     { id: 'ch2', name: 'Channel 2', subtitle: 'Async', color: '#C084FC', kind: 'channel' },
     { id: 'ch3', name: 'Channel 3', subtitle: 'Async', color: '#F472B6', kind: 'channel' },
     { id: 'ch4', name: 'Channel 4', subtitle: 'Async', color: '#4ADE80', kind: 'channel' }
-  ];
-
-  readonly tools: { id: string; label: string; order: number }[] = [
-    { id: 'snapshot', label: 'Save image', order: 0 },
-    { id: 'expand', label: 'Full screen', order: 1 },
-    { id: 'select', label: 'Mouse', order: 2 },
-    { id: 'zoomIn', label: 'Zoom in', order: 3 },
-    { id: 'zoomOut', label: 'Zoom out', order: 4 },
-    { id: 'pan', label: 'Pan', order: 5 },
-    { id: 'fit', label: 'Fit', order: 6 },
-    { id: 'cursor', label: 'Time cursor', order: 7 },
-    { id: 'grid', label: 'Grid', order: 8 },
-    { id: 'flag', label: 'Packet decode', order: 9 }
   ];
 
   hasData = false;
@@ -116,10 +105,15 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
   private readonly lineGenerator = d3.line<Point>().curve(d3.curveStepAfter);
   private pendingSample = true;
+  private commandSub?: Subscription;
 
-  constructor(private cdr: ChangeDetectorRef) {}
+  constructor(
+    private cdr: ChangeDetectorRef,
+    private plotCommands: PlotCommandService
+  ) {}
 
   ngAfterViewInit(): void {
+    this.commandSub = this.plotCommands.commands$.subscribe(tool => this.onTool(tool));
     if (this.pendingSample && !this.hasData) {
       this.loadTrace(createSampleTrace());
     }
@@ -129,6 +123,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.commandSub?.unsubscribe();
     this.resizeObserver?.disconnect();
   }
 
@@ -144,6 +139,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
         return 'zoom-out';
       case 'pan':
         return this.dragging ? 'grabbing' : 'grab';
+      case 'move':
+        return 'move';
       case 'cursor':
       case 'flag':
         return 'crosshair';
@@ -294,13 +291,10 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       case 'zoomIn':
       case 'zoomOut':
       case 'pan':
+      case 'move':
         this.activeTool = tool;
         this.selectEnabled = false;
         this.cursorEnabled = false;
-        break;
-      case 'fit':
-      case 'move':
-        this.onFitClick();
         break;
     }
 
@@ -414,7 +408,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (this.activeTool === 'pan') {
+    if (this.activeTool === 'pan' || this.activeTool === 'move') {
       this.dragging = true;
       event.preventDefault();
     }
@@ -444,8 +438,11 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (this.activeTool === 'pan') {
+    if (this.activeTool === 'pan' || this.activeTool === 'move') {
       this.shiftWindow(dx);
+      if (this.activeTool === 'move') {
+        this.waveformContainer?.nativeElement.parentElement?.scrollBy({ top: -dy });
+      }
     }
   }
 
