@@ -43,7 +43,7 @@
     </button>
   </div>
 
-  <div class="plot-body" *ngIf="hasData">
+  <div class="plot-body">
     <div class="lane-rail">
       <div class="lane-label" *ngFor="let track of tracks; trackBy: trackTrack" [style.height.px]="laneHeight(track)">
         <span class="lane-bar" [style.background]="track.color"></span>
@@ -91,12 +91,13 @@
         <g class="zoom-content">
           <ng-container *ngFor="let track of tracks; let i = index; trackBy: trackTrack">
             <path
+              *ngIf="hasData"
               class="wave-path"
               [attr.d]="wavePaths.get(track.id)"
               [attr.stroke]="track.color"
             ></path>
 
-            <g *ngIf="track.kind === 'bus' && decodeEnabled" class="bus-decode">
+            <g *ngIf="hasData && track.kind === 'bus' && decodeEnabled" class="bus-decode">
               <line
                 class="decode-rail"
                 x1="0"
@@ -129,7 +130,7 @@
                   [attr.x]="polygon.center.x"
                   [attr.y]="polygon.center.y"
                 >{{ polygon.content }}</text>
-              </ng-container>
+                </ng-container>
             </g>
           </ng-container>
         </g>
@@ -179,18 +180,16 @@
             [attr.y1]="plotHeight - axisHeight"
             [attr.y2]="plotHeight - axisHeight"
           ></line>
-          <text
-            *ngFor="let line of gridLines"
-            class="axis-label"
-            [attr.x]="line.x"
-            [attr.y]="plotHeight - 6"
-          >{{ line.label }}</text>
+          <ng-container *ngIf="hasData">
+            <text
+              *ngFor="let line of gridLines"
+              class="axis-label"
+              [attr.x]="line.x"
+              [attr.y]="plotHeight - 6"
+            >{{ line.label }}</text>
+          </ng-container>
         </g>
       </svg>
     </div>
-  </div>
-
-  <div class="empty-state" *ngIf="!hasData">
-    No Data Available
   </div>
 </section>

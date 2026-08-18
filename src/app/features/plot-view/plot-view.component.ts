@@ -120,9 +120,11 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    // Do not call createSampleTrace() here. That helper used to inject
-    // fake MIL-1553 / Async square waves on startup with no trace file.
+    // Do not call createSampleTrace() here. Waves and decode words
+    // appear only after loadTrace() / [capture] with a real file.
     this.observeSize();
+    this.measurePlot();
+    this.resizePlot();
   }
 
   ngOnDestroy(): void {
@@ -198,6 +200,10 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
     if (!data) {
       this.hasData = false;
+      this.cdr.detectChanges();
+      this.observeSize();
+      this.measurePlot();
+      this.resizePlot();
       this.cdr.markForCheck();
       return;
     }
@@ -605,47 +611,52 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   private resizePlot(): void {
-    if (!this.hasData) {
-      return;
-    }
-
     const waveWidth = Math.max(1, this.plotWidth);
     this.xScale = d3.scaleLinear().domain([this.start, this.stop]).range([0, waveWidth]);
-    const visibleStart = 2 * this.start - this.stop;
-    const visibleStop = 2 * this.stop - this.start;
 
-    this.tracks.forEach((track, index) => {
-      const yScale = this.waveYScale(index);
-      const waveform = this.waveforms.get(track.id) ?? [];
-      this.lineGenerator.x(d => this.xScale(d.x)).y(d => yScale(d.y));
-      const points = toPoints(waveform, visibleStart, visibleStop, this.fullDomain);
-      this.wavePaths.set(track.id, this.lineGenerator(points) ?? '');
+    this.wavePaths.clear();
+    this.busPolygons.clear();
 
-      if (track.kind === 'bus' && this.decodeEnabled) {
-        const decodeScale = this.decodeYScale(index);
-        const packets = this.busMap.get(track.id) ?? [];
-        this.busPolygons.set(
-          track.id,
-          packets
-            .filter(packet => packet.EndTime >= this.start && packet.StartTime <= this.stop)
-            .map(packet => ({
-              center: BusExtensions.getPolygonCenter(packet, this.xScale, decodeScale),
-              path: BusExtensions.getPolygon(packet, this.xScale, decodeScale),
-              content: packet.Content,
-              startTime: packet.StartTime,
-              endTime: packet.EndTime
-            }))
-        );
-      } else {
-        this.busPolygons.set(track.id, []);
-      }
-    });
+    if (this.hasData) {
+      const visibleStart = 2 * this.start - this.stop;
+      const visibleStop = 2 * this.stop - this.start;
+
+      this.tracks.forEach((track, index) => {
+        const yScale = this.waveYScale(index);
+        const waveform = this.waveforms.get(track.id) ?? [];
+        this.lineGenerator.x(d => this.xScale(d.x)).y(d => yScale(d.y));
+        const points = toPoints(waveform, visibleStart, visibleStop, this.fullDomain);
+        this.wavePaths.set(track.id, this.lineGenerator(points) ?? '');
+
+        if (track.kind === 'bus' && this.decodeEnabled) {
+          const decodeScale = this.decodeYScale(index);
+          const packets = this.busMap.get(track.id) ?? [];
+          this.busPolygons.set(
+            track.id,
+            packets
+              .filter(packet => packet.EndTime >= this.start && packet.StartTime <= this.stop)
+              .map(packet => ({
+                center: BusExtensions.getPolygonCenter(packet, this.xScale, decodeScale),
+                path: BusExtensions.getPolygon(packet, this.xScale, decodeScale),
+                content: packet.Content,
+                startTime: packet.StartTime,
+                endTime: packet.EndTime
+              }))
+          );
+        } else {
+          this.busPolygons.set(track.id, []);
+        }
+      });
+    }
 
     const lineCount = 9;
     this.gridLines = this.gridEnabled
       ? Array.from({ length: lineCount }, (_, i) => {
           const x = ((i + 1) * waveWidth) / (lineCount + 1);
-          return { x, label: toEngineeringTime(this.xScale.invert(x) - this.referenceTime) };
+          return {
+            x,
+            label: this.hasData ? toEngineeringTime(this.xScale.invert(x) - this.referenceTime) : ''
+          };
         })
       : [];
 

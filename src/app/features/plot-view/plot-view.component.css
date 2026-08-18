@@ -269,19 +269,6 @@
   pointer-events: none;
 }
 
-.empty-state {
-  flex: 1 1 auto;
-  align-self: stretch;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #A1A1AA;
-  font-size: 13px;
-  background: #1F1F22;
-  border: 0.5px solid #09090B;
-}
-
 .zoom-overlay {
   fill: rgba(20, 128, 195, 0.22);
   stroke: var(--btn-bg, #1480c3);

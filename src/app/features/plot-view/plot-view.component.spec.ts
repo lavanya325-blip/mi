@@ -24,6 +24,17 @@ describe('PlotViewComponent', () => {
     expect(component.hasData).toBe(false);
     component.loadTrace(createSampleTrace());
     expect(component.hasData).toBe(false);
+    expect(component.wavePaths.size).toBe(0);
+    expect(component.busPolygons.size).toBe(0);
+  });
+
+  it('should show bus lanes and plot operations before a trace is loaded', () => {
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Bus A');
+    expect(text).toContain('Bus B');
+    expect(text).toContain('Channel 1');
+    expect(component.tools.length).toBe(10);
+    expect(text).not.toContain('0000000000001');
   });
 
   it('should expose ten plot operations on the plot view', () => {
