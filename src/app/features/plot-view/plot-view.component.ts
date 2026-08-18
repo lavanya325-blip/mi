@@ -133,14 +133,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.resizeObserver?.disconnect();
   }
 
-  @HostListener('document:mil-plot-tool', ['$event'])
-  onMilPlotTool(event: Event): void {
-    const tool = (event as CustomEvent<string>).detail;
-    if (typeof tool === 'string' && tool.length > 0) {
-      this.onTool(tool);
-    }
-  }
-
   trackTrack(_index: number, track: PlotTrack): string {
     return track.id;
   }

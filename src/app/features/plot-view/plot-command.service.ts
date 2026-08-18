@@ -1,9 +1,0 @@
-import { Injectable } from '@angular/core';
-
-/** Optional helper. Toolbar can call document events instead of this service. */
-@Injectable({ providedIn: 'root' })
-export class PlotCommandService {
-  run(tool: string): void {
-    document.dispatchEvent(new CustomEvent('mil-plot-tool', { detail: tool }));
-  }
-}
