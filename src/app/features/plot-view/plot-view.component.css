@@ -229,9 +229,9 @@
 }
 
 .bus-poly {
-  fill-opacity: 0.88;
-  stroke: rgba(255, 255, 255, 0.45);
-  stroke-width: 0.6;
+  fill-opacity: 0.9;
+  stroke: #E8A04A;
+  stroke-width: 1.1;
 }
 
 .bus-text {
@@ -243,8 +243,9 @@
 }
 
 .empty-state {
-  flex: 1;
+  flex: 1 1 auto;
   align-self: stretch;
+  min-height: 0;
   display: flex;
   align-items: center;
   justify-content: center;

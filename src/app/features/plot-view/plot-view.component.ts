@@ -25,6 +25,7 @@ export type PlotTool =
   | 'zoomIn'
   | 'zoomOut'
   | 'pan'
+  | 'fit'
   | 'move'
   | 'cursor'
   | 'grid'
@@ -64,7 +65,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     { id: 'zoomIn', label: 'Zoom in', order: 3 },
     { id: 'zoomOut', label: 'Zoom out', order: 4 },
     { id: 'pan', label: 'Pan', order: 5 },
-    { id: 'move', label: 'Drag pan', order: 6 },
+    { id: 'fit', label: 'Fit', order: 6 },
     { id: 'cursor', label: 'Time cursor', order: 7 },
     { id: 'grid', label: 'Grid', order: 8 },
     { id: 'flag', label: 'Packet decode', order: 9 }
@@ -93,9 +94,11 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   plotWidth = 800;
   plotHeight = 520;
   readonly axisHeight = 24;
-  /** Stretched to fill the plot body so there is no empty band under Channel 4. */
-  waveHeight = 52;
-  /** Figma Group 9: 1164 × 19 */
+  /** Compact square-wave amplitude — leftover height becomes gap under each lane. */
+  readonly waveHeight = 52;
+  readonly decodeGap = 4;
+  laneGap = 8;
+  /** Figma Group 9: 19px decode strip directly under the bus wave. */
   readonly decodeHeight = 19;
 
   xScale!: d3.ScaleLinear<number, number>;
@@ -141,8 +144,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
         return 'zoom-out';
       case 'pan':
         return this.dragging ? 'grabbing' : 'grab';
-      case 'move':
-        return 'move';
       case 'cursor':
       case 'flag':
         return 'crosshair';
@@ -169,10 +170,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   laneHeight(track: PlotTrack): number {
-    if (track.kind !== 'bus') {
-      return this.waveHeight;
-    }
-    return this.waveHeight + (this.decodeEnabled ? this.decodeHeight : 0);
+    const decode = track.kind === 'bus' && this.decodeEnabled ? this.decodeGap + this.decodeHeight : 0;
+    return this.waveHeight + decode + this.laneGap;
   }
 
   laneTop(trackIndex: number): number {
@@ -188,7 +187,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   decodeTop(trackIndex: number): number {
-    return this.laneTop(trackIndex) + this.waveHeight;
+    return this.laneTop(trackIndex) + this.waveHeight + this.decodeGap;
   }
 
   /**
@@ -295,10 +294,13 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       case 'zoomIn':
       case 'zoomOut':
       case 'pan':
-      case 'move':
         this.activeTool = tool;
         this.selectEnabled = false;
         this.cursorEnabled = false;
+        break;
+      case 'fit':
+      case 'move':
+        this.onFitClick();
         break;
     }
 
@@ -322,9 +324,9 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.onTool('pan', event);
   }
 
-  onFitClick(event: Event): void {
-    event.preventDefault();
-    event.stopPropagation();
+  onFitClick(event?: Event): void {
+    event?.preventDefault();
+    event?.stopPropagation();
     this.start = this.fullDomain[0];
     this.stop = this.fullDomain[1];
     this.clampWindow();
@@ -412,7 +414,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (this.activeTool === 'pan' || this.activeTool === 'move') {
+    if (this.activeTool === 'pan') {
       this.dragging = true;
       event.preventDefault();
     }
@@ -442,11 +444,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       return;
     }
 
-    if (this.activeTool === 'pan' || this.activeTool === 'move') {
+    if (this.activeTool === 'pan') {
       this.shiftWindow(dx);
-      if (this.activeTool === 'move') {
-        this.waveformContainer?.nativeElement.parentElement?.scrollBy({ top: -dy });
-      }
     }
   }
 
@@ -593,14 +592,16 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.plotWidth = Math.max(240, width);
     this.plotHeight = Math.max(this.minContentHeight(), height);
 
-    const decodeExtra =
-      this.tracks.filter(track => track.kind === 'bus' && this.decodeEnabled).length * this.decodeHeight;
-    const waveArea = Math.max(this.tracks.length * 36, this.plotHeight - this.axisHeight - decodeExtra);
-    this.waveHeight = Math.max(36, Math.floor(waveArea / this.tracks.length));
+    const packed = this.tracks.reduce((sum, track) => {
+      const decode = track.kind === 'bus' && this.decodeEnabled ? this.decodeGap + this.decodeHeight : 0;
+      return sum + this.waveHeight + decode;
+    }, 0);
+    const leftover = this.plotHeight - this.axisHeight - packed;
+    this.laneGap = Math.max(4, Math.floor(leftover / Math.max(1, this.tracks.length)));
   }
 
   private minContentHeight(): number {
-    return this.tracks.length * 36 + this.decodeHeight * 2 + this.axisHeight;
+    return this.tracks.length * (this.waveHeight + 4) + this.decodeHeight * 2 + this.axisHeight;
   }
 
   private resizePlot(): void {

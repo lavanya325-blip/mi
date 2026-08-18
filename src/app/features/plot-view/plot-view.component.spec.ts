@@ -27,7 +27,7 @@ describe('PlotViewComponent', () => {
       'zoomIn',
       'zoomOut',
       'pan',
-      'move',
+      'fit',
       'cursor',
       'grid',
       'flag'
@@ -35,12 +35,9 @@ describe('PlotViewComponent', () => {
     expect(component.tools.map(tool => tool.order)).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
   });
 
-  it('should use a 19px decode row', () => {
+  it('should keep a compact wave with a 19px decode row under the bus', () => {
     expect(component.decodeHeight).toBe(19);
-  });
-
-  it('should stretch wave height to fill the plot body', () => {
-    expect(component.waveHeight).toBeGreaterThanOrEqual(36);
+    expect(component.waveHeight).toBe(52);
   });
 
   it('should toggle grid and decode from the toolbar', () => {
@@ -55,7 +52,13 @@ describe('PlotViewComponent', () => {
     expect(component.isFullscreen).toBe(true);
   });
 
-  it('should expose I3C-compatible mouse handlers', () => {
+  it('should fit the full time window', () => {
+    const start = component['fullDomain'][0];
+    const end = component['fullDomain'][1];
+    component.onFitClick();
+    expect(component['start']).toBe(start);
+    expect(component['stop']).toBe(end);
+  });
     expect(typeof component.waveformMousemove).toBe('function');
     expect(typeof component.waveformMouseup).toBe('function');
     expect(typeof component.SaveImage).toBe('function');
