@@ -1,0 +1,49 @@
+<section class="export-section" aria-label="Export">
+  <div class="section-title">Export</div>
+
+  <div class="export-field">
+    <label class="field-label" for="export-location">Export Location</label>
+
+    <div class="file-row">
+      <button
+        type="button"
+        class="browse-btn"
+        aria-label="Browse Export Location"
+        (click)="browse()"
+      >
+        <span class="browse-dots">...</span>
+      </button>
+
+      <input
+        id="export-location"
+        class="path-input"
+        type="text"
+        [(ngModel)]="exportLocation"
+        placeholder="D:/file/folder/sss"
+        spellcheck="false"
+      />
+    </div>
+  </div>
+
+  <div class="export-field">
+    <label class="field-label" for="export-format">Export Format</label>
+
+    <select
+      id="export-format"
+      class="format-select"
+      [(ngModel)]="exportFormat"
+    >
+      <option *ngFor="let format of formats" [ngValue]="format">
+        {{ format }}
+      </option>
+    </select>
+  </div>
+
+  <input
+    #folderInput
+    class="hidden-file-input"
+    type="file"
+    webkitdirectory
+    (change)="onFolderSelected($event)"
+  />
+</section>
