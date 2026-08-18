@@ -195,3 +195,39 @@
 .view-option.is-selected {
   color: var(--color-text, #F4F4F5);
 }
+
+/* If a leftover <select> is still in the desktop HTML, force it dark.
+   Windows paints unstyled native selects white (screenshot vs localhost). */
+app-display-section select,
+.display-section select,
+.view-select-wrap > select {
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color-scheme: dark;
+  forced-color-adjust: none;
+  width: 203px;
+  height: 32px;
+  margin: 0;
+  padding: 0 20px 0 8px;
+  border: 1px solid #000000;
+  border-radius: 2px;
+  background-color: #27272A !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath fill='%23D4D4D8' d='M1 1.25 5 5.25 9 1.25'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  color: #D4D4D8 !important;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.4px;
+}
+
+app-display-section select option,
+.display-section select option {
+  background-color: #27272A;
+  color: #D4D4D8;
+  white-space: nowrap;
+}

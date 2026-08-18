@@ -1,4 +1,4 @@
-import { Component, HostListener } from '@angular/core';
+import { Component, HostListener, ViewEncapsulation } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 @Component({
@@ -6,7 +6,8 @@ import { CommonModule } from '@angular/common';
   standalone: true,
   imports: [CommonModule],
   templateUrl: './display-section.component.html',
-  styleUrls: ['./display-section.component.css']
+  styleUrls: ['./display-section.component.css'],
+  encapsulation: ViewEncapsulation.None
 })
 export class DisplaySectionComponent {
   selectedView = 'Listing Window';

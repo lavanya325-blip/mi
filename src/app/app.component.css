@@ -128,3 +128,18 @@ body {
 
   overflow: auto;
 }
+
+/* Native Windows <select>/<input> are white unless color-scheme is dark. */
+.workspace select,
+.workspace option,
+.workspace input:not([type="checkbox"]):not([type="radio"]):not([type="file"]) {
+  color-scheme: dark;
+  forced-color-adjust: none;
+  background-color: var(--input-second-bg, #27272A);
+  color: var(--color-text, #D4D4D8);
+}
+
+.workspace select {
+  appearance: none;
+  -webkit-appearance: none;
+}
