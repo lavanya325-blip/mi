@@ -47,8 +47,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  gap: 39px;
   width: 247px;
-  height: 24px;
+  height: 32px;
   flex: none;
   order: 1;
   align-self: stretch;
@@ -72,11 +73,15 @@
   flex-grow: 0;
 }
 
+/* Frame 1171276449 — Listing Window field */
 .view-select-wrap {
   position: relative;
-  flex: 1 1 auto;
-  min-width: 0;
-  height: 24px;
+  width: 180px;
+  height: 32px;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
 }
 
 .view-select {
@@ -84,9 +89,9 @@
   display: flex;
   flex-direction: row;
   align-items: center;
-  width: 100%;
-  height: 24px;
   padding: 0;
+  width: 180px;
+  height: 32px;
   border: 1px solid var(--inner-block-border, #000000);
   border-radius: 2px;
   background-color: var(--input-second-bg, #27272A);
