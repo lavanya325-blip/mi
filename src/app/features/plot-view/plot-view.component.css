@@ -68,6 +68,7 @@
 
 .icon-btn,
 .tool-btn {
+  box-sizing: border-box;
   width: 20px;
   height: 20px;
   padding: 0;
@@ -79,12 +80,16 @@
   align-items: center;
   justify-content: center;
   flex: none;
+  flex-grow: 0;
+  position: relative;
+  z-index: 2;
 }
 
 .icon-btn svg,
 .tool-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
+  display: block;
 }
 
 .icon-btn.is-active,
@@ -94,7 +99,7 @@
   color: #FFFFFF;
 }
 
-/* manipulation tools */
+/* manipulation tools — Figma 20×20 icons, order 0–9 */
 .manipulation-tools {
   display: flex;
   flex-direction: row;
@@ -102,11 +107,13 @@
   padding: 0 8px;
   gap: 22px;
   width: 414px;
+  max-width: 100%;
   height: 20px;
   border-radius: 4px;
   flex: none;
   order: 1;
   flex-grow: 0;
+  z-index: 2;
 }
 
 .plot-body {
@@ -130,6 +137,7 @@
 .waveform-svg {
   display: block;
   width: 100%;
+  touch-action: none;
 }
 
 .lane-rail {
@@ -191,16 +199,38 @@
   stroke-width: 1.5;
 }
 
+/* Group 9 — decoded bus words, 19px */
+.bus-decode {
+  height: 19px;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+  z-index: 1;
+}
+
+.decode-rail {
+  stroke: #7DD3FC;
+  stroke-width: 1;
+}
+
+.decode-idle {
+  stroke: #E879F9;
+  stroke-width: 1;
+}
+
 .bus-poly {
-  fill-opacity: 0.92;
-  stroke: rgba(255, 255, 255, 0.35);
+  fill-opacity: 0.88;
+  stroke: rgba(255, 255, 255, 0.45);
   stroke-width: 0.6;
 }
 
-.status-link {
-  stroke: #71717A;
-  stroke-width: 0.7;
-  stroke-dasharray: 2 3;
+.bus-text {
+  fill: #FFFFFF;
+  font-size: 9px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
 }
 
 .empty-state {
@@ -215,34 +245,23 @@
   border: 0.5px solid #09090B;
 }
 
-.bus-text {
-  fill: #FFFFFF;
-  font-size: 10px;
-  text-anchor: middle;
-  dominant-baseline: middle;
-  pointer-events: none;
-}
-
 .zoom-overlay {
   fill: rgba(20, 128, 195, 0.22);
   stroke: var(--btn-bg, #1480c3);
   stroke-width: 1;
+  pointer-events: none;
 }
 
 .cursor-line,
-.marker-line,
-.flag-line {
+.marker-line {
   stroke: #F5C518;
   stroke-width: 1.2;
+  pointer-events: none;
 }
 
 .marker-line {
   stroke: #00E4B1;
   stroke-dasharray: 4 3;
-}
-
-.flag-mark {
-  fill: #E77352;
 }
 
 .axis-label {

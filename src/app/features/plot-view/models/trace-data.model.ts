@@ -49,7 +49,7 @@ export function createSampleTrace(): TraceData {
       ch4: { firstEdgeRise: true, edges: clockEdges(period, minEdgeWidth * 0.6) }
     },
     buses: {
-      busA: buildStatusWords(startTime, endTime, minEdgeWidth, ['17', 'D', 'S', '000000000001'], 0),
+      busA: buildStatusWords(startTime, endTime, minEdgeWidth, ['1', '17', 'D', 'S', '0000000000001'], 0),
       busB: buildStatusWords(startTime, endTime, minEdgeWidth, ['2A', 'D', 'S', '000000001010'], minEdgeWidth * 8)
     }
   };

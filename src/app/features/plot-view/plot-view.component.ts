@@ -13,8 +13,11 @@ import {
 import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
 import { BusPolygon, PacketBus, PlotTrack, Point } from './models/plot-track.model';
+import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
+import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
+import { BusExtensions } from './extensions/bus-extensions';
 
-/** Defined here so the template type-checks even if plot-track.model.ts is an older copy. */
+/** Toolbar ids — keep this list here so templates type-check even if plot-track.model.ts is stale. */
 export type PlotTool =
   | 'snapshot'
   | 'expand'
@@ -26,9 +29,6 @@ export type PlotTool =
   | 'cursor'
   | 'grid'
   | 'flag';
-import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
-import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
-import { BusExtensions } from './extensions/bus-extensions';
 
 @Component({
   selector: 'app-plot-view',
@@ -57,41 +57,42 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     { id: 'ch4', name: 'Channel 4', subtitle: 'Async', color: '#4ADE80', kind: 'channel' }
   ];
 
-  readonly tools: { id: PlotTool; label: string }[] = [
-    { id: 'snapshot', label: 'Snapshot' },
-    { id: 'expand', label: 'Full screen' },
-    { id: 'select', label: 'Select' },
-    { id: 'zoomIn', label: 'Zoom in' },
-    { id: 'zoomOut', label: 'Zoom out' },
-    { id: 'pan', label: 'Pan' },
-    { id: 'move', label: 'Move' },
-    { id: 'cursor', label: 'Cursor' },
-    { id: 'grid', label: 'Grid' },
-    { id: 'flag', label: 'Flag' }
+  readonly tools: { id: PlotTool; label: string; order: number }[] = [
+    { id: 'snapshot', label: 'Save image', order: 0 },
+    { id: 'expand', label: 'Full screen', order: 1 },
+    { id: 'select', label: 'Mouse', order: 2 },
+    { id: 'zoomIn', label: 'Zoom in', order: 3 },
+    { id: 'zoomOut', label: 'Zoom out', order: 4 },
+    { id: 'pan', label: 'Pan', order: 5 },
+    { id: 'move', label: 'Drag pan', order: 6 },
+    { id: 'cursor', label: 'Time cursor', order: 7 },
+    { id: 'grid', label: 'Grid', order: 8 },
+    { id: 'flag', label: 'Packet decode', order: 9 }
   ];
 
   hasData = false;
   @HostBinding('class.is-fullscreen') isFullscreen = false;
-  activeTool: PlotTool = 'pan';
+  activeTool: PlotTool = 'select';
   gridEnabled = true;
+  decodeEnabled = true;
   cursorEnabled = false;
-  selectEnabled = false;
-  markerEnabled = false;
-  flagEnabled = false;
-  cursorX = -1;
-  markers: number[] = [];
-  flags: number[] = [];
+  cursorTimes: number[] = [];
+  markerTimes: number[] = [];
 
   showOverlay = false;
   overlayX = 0;
   overlayWidth = 0;
   private overlayx0 = 0;
+  private dragging = false;
+  private lastPointerX = 0;
+  private lastPointerY = 0;
 
   plotWidth = 800;
   plotHeight = 520;
   readonly axisHeight = 24;
   readonly waveHeight = 52;
-  readonly decodeHeight = 40;
+  /** Figma Group 9: 1164 × 19 */
+  readonly decodeHeight = 19;
 
   xScale!: d3.ScaleLinear<number, number>;
   wavePaths = new Map<string, string>();
@@ -105,7 +106,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   private stop = 1;
   private minEdgeWidth = 50e-9;
   private referenceTime = 0;
-  private zoomBehavior?: d3.ZoomBehavior<SVGSVGElement, unknown>;
   private resizeObserver?: ResizeObserver;
   private readonly lineGenerator = d3.line<Point>().curve(d3.curveStepAfter);
   private pendingSample = true;
@@ -122,12 +122,29 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.clearZoom();
     this.resizeObserver?.disconnect();
   }
 
   trackTrack(_index: number, track: PlotTrack): string {
     return track.id;
+  }
+
+  plotCursor(): string {
+    switch (this.activeTool) {
+      case 'zoomIn':
+        return 'zoom-in';
+      case 'zoomOut':
+        return 'zoom-out';
+      case 'pan':
+        return this.dragging ? 'grabbing' : 'grab';
+      case 'move':
+        return 'move';
+      case 'cursor':
+      case 'flag':
+        return 'crosshair';
+      default:
+        return 'default';
+    }
   }
 
   toggleFullscreen(): void {
@@ -136,7 +153,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     requestAnimationFrame(() => {
       this.measurePlot();
       this.resizePlot();
-      this.enablePan();
       this.cdr.markForCheck();
     });
   }
@@ -149,7 +165,10 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   laneHeight(track: PlotTrack): number {
-    return track.kind === 'bus' ? this.waveHeight + this.decodeHeight : this.waveHeight;
+    if (track.kind !== 'bus') {
+      return this.waveHeight;
+    }
+    return this.waveHeight + (this.decodeEnabled ? this.decodeHeight : 0);
   }
 
   laneTop(trackIndex: number): number {
@@ -162,6 +181,10 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   contentHeight(): number {
     return this.laneTop(this.tracks.length) + this.axisHeight;
+  }
+
+  decodeTop(trackIndex: number): number {
+    return this.laneTop(trackIndex) + this.waveHeight;
   }
 
   /**
@@ -196,7 +219,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.cdr.detectChanges();
     this.measurePlot();
     this.resizePlot();
-    this.enablePan();
     this.cdr.markForCheck();
   }
 
@@ -205,25 +227,20 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       return this.gridEnabled;
     }
     if (tool === 'cursor') {
-      return this.cursorEnabled;
-    }
-    if (tool === 'select') {
-      return this.selectEnabled;
+      return this.cursorEnabled || this.activeTool === 'cursor';
     }
     if (tool === 'expand') {
       return this.isFullscreen;
     }
     if (tool === 'flag') {
-      return this.flagEnabled;
+      return this.decodeEnabled;
     }
     return this.activeTool === tool;
   }
 
-  onTool(tool: PlotTool, event: MouseEvent): void {
+  onTool(tool: PlotTool, event: Event): void {
+    event.preventDefault();
     event.stopPropagation();
-    if (!this.hasData && tool !== 'expand' && tool !== 'snapshot') {
-      return;
-    }
 
     switch (tool) {
       case 'snapshot':
@@ -232,40 +249,28 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       case 'expand':
         this.toggleFullscreen();
         break;
-      case 'zoomIn':
-        this.clearZoom();
-        this.activeTool = 'zoomIn';
-        break;
-      case 'zoomOut':
-        this.clearZoom();
-        this.activeTool = 'zoomOut';
-        break;
-      case 'pan':
-      case 'move':
-        this.activeTool = 'pan';
-        this.enablePan();
-        break;
-      case 'select':
-        this.selectEnabled = !this.selectEnabled;
-        this.activeTool = 'select';
-        this.clearZoom();
-        break;
-      case 'cursor':
-        this.cursorEnabled = !this.cursorEnabled;
-        this.activeTool = 'cursor';
-        this.clearZoom();
-        if (!this.cursorEnabled) {
-          this.cursorX = -1;
-        }
-        break;
       case 'grid':
         this.gridEnabled = !this.gridEnabled;
         this.resizePlot();
         break;
       case 'flag':
-        this.flagEnabled = !this.flagEnabled;
-        this.activeTool = 'flag';
-        this.clearZoom();
+        this.decodeEnabled = !this.decodeEnabled;
+        this.measurePlot();
+        this.resizePlot();
+        break;
+      case 'cursor':
+        this.activeTool = 'cursor';
+        this.cursorEnabled = true;
+        break;
+      case 'select':
+      case 'zoomIn':
+      case 'zoomOut':
+      case 'pan':
+      case 'move':
+        this.activeTool = tool;
+        if (tool !== 'cursor') {
+          this.cursorEnabled = false;
+        }
         break;
     }
 
@@ -273,63 +278,123 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   waveformMousedown(event: MouseEvent): void {
-    if (!this.hasData || event.button !== 0) {
+    if (!this.hasData || event.button !== 0 || !this.xScale) {
       return;
     }
 
-    const x = event.offsetX;
+    const x = this.pointerX(event);
+    this.lastPointerX = x;
+    this.lastPointerY = event.clientY;
+
     if (this.activeTool === 'zoomIn') {
+      this.dragging = true;
       this.showOverlay = true;
       this.overlayx0 = x;
       this.overlayX = x;
       this.overlayWidth = 0;
-      event.stopPropagation();
-    } else if (this.activeTool === 'zoomOut') {
-      const range = this.stop - this.start;
-      const t = this.xScale.invert(x);
-      this.start = t - range * 2;
-      this.stop = t + range * 2;
-      this.clampWindow();
-      this.resizePlot();
-      event.stopPropagation();
-    } else if (this.activeTool === 'cursor' && this.cursorEnabled) {
-      this.cursorX = x;
-      event.stopPropagation();
-    } else if (this.activeTool === 'flag' && this.flagEnabled) {
-      this.flags = [...this.flags, x];
-      event.stopPropagation();
-    } else if (this.activeTool === 'select' && this.selectEnabled) {
-      this.cursorX = x;
-      event.stopPropagation();
+      event.preventDefault();
+      return;
+    }
+
+    if (this.activeTool === 'zoomOut') {
+      this.zoomAround(x, 2);
+      event.preventDefault();
+      return;
+    }
+
+    if (this.activeTool === 'cursor') {
+      const time = this.xScale.invert(x);
+      this.cursorTimes = [...this.cursorTimes.slice(-1), time];
+      this.cursorEnabled = true;
+      this.cdr.markForCheck();
+      event.preventDefault();
+      return;
+    }
+
+    if (this.activeTool === 'select') {
+      this.dragging = true;
+      this.showOverlay = true;
+      this.overlayx0 = x;
+      this.overlayX = x;
+      this.overlayWidth = 0;
+      this.markerTimes = [this.xScale.invert(x)];
+      event.preventDefault();
+      return;
+    }
+
+    if (this.activeTool === 'pan' || this.activeTool === 'move') {
+      this.dragging = true;
+      event.preventDefault();
     }
   }
 
-  waveformMousemove(event: MouseEvent): void {
-    if (!this.showOverlay) {
+  @HostListener('document:mousemove', ['$event'])
+  onDocumentMove(event: MouseEvent): void {
+    if (!this.dragging) {
       return;
     }
-    if (event.offsetX >= this.overlayx0) {
-      this.overlayX = this.overlayx0;
-      this.overlayWidth = event.offsetX - this.overlayx0;
-    } else {
-      this.overlayX = event.offsetX;
-      this.overlayWidth = this.overlayx0 - event.offsetX;
+
+    const x = this.pointerX(event);
+    const dx = x - this.lastPointerX;
+    const dy = event.clientY - this.lastPointerY;
+    this.lastPointerX = x;
+    this.lastPointerY = event.clientY;
+
+    if (this.showOverlay && (this.activeTool === 'zoomIn' || this.activeTool === 'select')) {
+      if (x >= this.overlayx0) {
+        this.overlayX = this.overlayx0;
+        this.overlayWidth = x - this.overlayx0;
+      } else {
+        this.overlayX = x;
+        this.overlayWidth = this.overlayx0 - x;
+      }
+      this.cdr.markForCheck();
+      return;
     }
-    event.stopPropagation();
+
+    if (this.activeTool === 'pan' || this.activeTool === 'move') {
+      this.shiftWindow(dx);
+      if (this.activeTool === 'move') {
+        this.waveformContainer?.nativeElement.parentElement?.scrollBy({ top: -dy });
+      }
+    }
   }
 
-  waveformMouseup(event: MouseEvent): void {
-    if (!this.showOverlay) {
+  @HostListener('document:mouseup', ['$event'])
+  onDocumentUp(_event: MouseEvent): void {
+    if (!this.dragging) {
       return;
     }
-    this.showOverlay = false;
-    if (this.overlayWidth > 2) {
-      this.start = this.xScale.invert(this.overlayX);
-      this.stop = this.xScale.invert(this.overlayX + this.overlayWidth);
-      this.clampWindow();
-      this.resizePlot();
+    this.dragging = false;
+
+    if (this.showOverlay) {
+      this.showOverlay = false;
+      if (this.overlayWidth > 4 && this.xScale) {
+        const t0 = this.xScale.invert(this.overlayX);
+        const t1 = this.xScale.invert(this.overlayX + this.overlayWidth);
+        if (this.activeTool === 'zoomIn') {
+          this.start = Math.min(t0, t1);
+          this.stop = Math.max(t0, t1);
+          this.clampWindow();
+          this.resizePlot();
+        } else if (this.activeTool === 'select') {
+          this.markerTimes = [Math.min(t0, t1), Math.max(t0, t1)];
+        }
+      }
+      this.cdr.markForCheck();
     }
-    event.stopPropagation();
+  }
+
+  waveformWheel(event: WheelEvent): void {
+    if (!this.hasData || !this.xScale) {
+      return;
+    }
+    if (this.activeTool !== 'select' && this.activeTool !== 'zoomIn' && this.activeTool !== 'zoomOut') {
+      return;
+    }
+    event.preventDefault();
+    const factor = event.deltaY > 0 ? 1.25 : 0.8;
+    this.zoomAround(this.pointerX(event), factor);
   }
 
   waveYScale(trackIndex: number): d3.ScaleLinear<number, number> {
@@ -339,9 +404,42 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   decodeYScale(trackIndex: number): d3.ScaleLinear<number, number> {
-    const top = this.laneTop(trackIndex) + this.waveHeight + 4;
-    const bottom = this.laneTop(trackIndex) + this.laneHeight(this.tracks[trackIndex]) - 6;
-    return d3.scaleLinear().domain([-0.1, 1.1]).range([bottom, top]);
+    const top = this.decodeTop(trackIndex);
+    const bottom = top + this.decodeHeight - 1;
+    return d3.scaleLinear().domain([0, 1]).range([bottom, top]);
+  }
+
+  timeX(time: number): number {
+    return this.xScale ? this.xScale(time) : 0;
+  }
+
+  private pointerX(event: MouseEvent): number {
+    const svg = this.waveformsvg?.nativeElement;
+    if (!svg) {
+      return event.offsetX;
+    }
+    const rect = svg.getBoundingClientRect();
+    return event.clientX - rect.left;
+  }
+
+  private zoomAround(pixelX: number, factor: number): void {
+    const t = this.xScale.invert(pixelX);
+    const range = (this.stop - this.start) * factor;
+    this.start = t - range * ((t - this.start) / Math.max(this.stop - this.start, 1e-18));
+    this.stop = this.start + range;
+    this.clampWindow();
+    this.resizePlot();
+  }
+
+  private shiftWindow(dxPixels: number): void {
+    if (!this.xScale) {
+      return;
+    }
+    const shift = this.xScale.invert(0) - this.xScale.invert(dxPixels);
+    this.start += shift;
+    this.stop += shift;
+    this.clampWindow();
+    this.resizePlot();
   }
 
   private edgesToWaveform(collection: EdgeCollection): Point[] {
@@ -360,11 +458,14 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
 
   private clampWindow(): void {
     const [begin, end] = this.fullDomain;
+    const span = this.stop - this.start;
     if (this.start < begin) {
       this.start = begin;
+      this.stop = Math.min(end, begin + span);
     }
     if (this.stop > end) {
       this.stop = end;
+      this.start = Math.max(begin, end - span);
     }
     if (this.stop <= this.start) {
       this.stop = Math.min(end, this.start + this.minEdgeWidth * 40);
@@ -376,44 +477,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.busMap.clear();
     this.wavePaths.clear();
     this.busPolygons.clear();
-    this.markers = [];
-    this.flags = [];
-    this.cursorX = -1;
-  }
-
-  private clearZoom(): void {
-    const svg = this.waveformsvg?.nativeElement;
-    if (this.zoomBehavior && svg) {
-      d3.select(svg).on('.zoom', null);
-      this.zoomBehavior = undefined;
-      d3.select(svg).select('g.zoom-content').attr('transform', null);
-    }
-  }
-
-  private enablePan(): void {
-    const svg = this.waveformsvg?.nativeElement;
-    if (!svg || !this.hasData) {
-      return;
-    }
-    this.clearZoom();
-    this.zoomBehavior = d3
-      .zoom<SVGSVGElement, unknown>()
-      .scaleExtent([0.1, 30])
-      .on('zoom', event => {
-        d3.select(svg)
-          .select('g.zoom-content')
-          .attr('transform', `translate(${event.transform.x},0) scale(${event.transform.k},1)`);
-      })
-      .on('end', event => {
-        const domain = event.transform.rescaleX(this.xScale).domain();
-        this.start = domain[0];
-        this.stop = domain[1];
-        this.clampWindow();
-        this.resizePlot();
-        d3.select(svg).select('g.zoom-content').attr('transform', null);
-        this.zoomBehavior?.transform(d3.select(svg), d3.zoomIdentity);
-      });
-    d3.select(svg).call(this.zoomBehavior);
+    this.cursorTimes = [];
+    this.markerTimes = [];
   }
 
   private observeSize(): void {
@@ -454,7 +519,7 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       const points = toPoints(waveform, visibleStart, visibleStop, this.fullDomain);
       this.wavePaths.set(track.id, this.lineGenerator(points) ?? '');
 
-      if (track.kind === 'bus') {
+      if (track.kind === 'bus' && this.decodeEnabled) {
         const decodeScale = this.decodeYScale(index);
         const packets = this.busMap.get(track.id) ?? [];
         this.busPolygons.set(
@@ -469,6 +534,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
               endTime: packet.EndTime
             }))
         );
+      } else {
+        this.busPolygons.set(track.id, []);
       }
     });
 
@@ -490,14 +557,61 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     }
     const clone = svg.cloneNode(true) as SVGSVGElement;
     clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+    clone.setAttribute('width', String(this.plotWidth));
+    clone.setAttribute('height', String(this.plotHeight));
+    const style = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    style.textContent = `
+      .grid-line { stroke: #3F3F46; stroke-width: 0.5; stroke-dasharray: 3 4; }
+      .lane-sep { stroke-dasharray: none; }
+      .wave-path { fill: none; stroke-width: 1.5; }
+      .bus-poly { fill-opacity: 0.92; stroke: rgba(255,255,255,0.35); }
+      .bus-text { fill: #fff; font-size: 10px; text-anchor: middle; }
+      .axis-label { fill: #A1A1AA; font-size: 10px; text-anchor: middle; }
+      .decode-idle { stroke: #E879F9; stroke-width: 1; }
+      .decode-rail { stroke: #7DD3FC; stroke-width: 1; }
+    `;
+    clone.insertBefore(style, clone.firstChild);
+    const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    bg.setAttribute('width', '100%');
+    bg.setAttribute('height', '100%');
+    bg.setAttribute('fill', '#1F1F22');
+    clone.insertBefore(bg, clone.firstChild);
+
     const blob = new Blob([new XMLSerializer().serializeToString(clone)], {
       type: 'image/svg+xml;charset=utf-8'
     });
     const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = 'plot-view.svg';
-    link.click();
-    URL.revokeObjectURL(url);
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = this.plotWidth;
+      canvas.height = this.plotHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(image, 0, 0);
+      canvas.toBlob(png => {
+        if (!png) {
+          return;
+        }
+        const pngUrl = URL.createObjectURL(png);
+        const link = document.createElement('a');
+        link.href = pngUrl;
+        link.download = 'plot-view.png';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(pngUrl);
+        URL.revokeObjectURL(url);
+      }, 'image/png');
+    };
+    image.onerror = () => {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'plot-view.svg';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    };
+    image.src = url;
   }
 }
