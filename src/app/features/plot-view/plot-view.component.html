@@ -17,6 +17,22 @@
     </div>
   </header>
 
+  <div class="manipulation-tools" role="toolbar" aria-label="Plot operations">
+    <button
+      *ngFor="let tool of tools"
+      type="button"
+      class="tool-btn"
+      [style.order]="tool.order"
+      [class.is-active]="isToolLit(tool.id)"
+      [attr.title]="tool.label"
+      [attr.aria-label]="tool.label"
+      (click)="onTool(tool.id, $event)"
+      (mousedown)="$event.stopPropagation()"
+    >
+      <mat-icon>{{ tool.icon }}</mat-icon>
+    </button>
+  </div>
+
   <div class="plot-body" *ngIf="hasData">
     <div class="lane-rail">
       <div class="lane-label" *ngFor="let track of tracks; trackBy: trackTrack" [style.height.px]="laneHeight(track)">

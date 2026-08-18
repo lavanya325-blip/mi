@@ -11,6 +11,7 @@ import {
   ViewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
 import * as d3 from 'd3';
 import { BusPolygon, PacketBus, PlotTrack, Point } from './models/plot-track.model';
 import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
@@ -34,7 +35,7 @@ export type PlotTool =
 @Component({
   selector: 'app-plot-view',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, MatIconModule],
   templateUrl: './plot-view.component.html',
   styleUrl: './plot-view.component.css',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -56,6 +57,19 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     { id: 'ch2', name: 'Channel 2', subtitle: 'Async', color: '#C084FC', kind: 'channel' },
     { id: 'ch3', name: 'Channel 3', subtitle: 'Async', color: '#F472B6', kind: 'channel' },
     { id: 'ch4', name: 'Channel 4', subtitle: 'Async', color: '#4ADE80', kind: 'channel' }
+  ];
+
+  readonly tools: { id: string; icon: string; label: string; order: number }[] = [
+    { id: 'snapshot', icon: 'camera_alt', label: 'Camera', order: 0 },
+    { id: 'expand', icon: 'open_in_full', label: 'Expand', order: 1 },
+    { id: 'select', icon: 'mouse', label: 'Mouse', order: 2 },
+    { id: 'zoomIn', icon: 'zoom_in', label: 'Zoom in', order: 3 },
+    { id: 'zoomOut', icon: 'zoom_out', label: 'Zoom out', order: 4 },
+    { id: 'pan', icon: 'pan_tool', label: 'Pan', order: 5 },
+    { id: 'move', icon: 'drag_pan', label: 'Drag pan', order: 6 },
+    { id: 'cursor', icon: 'calendar_month', label: 'Calendar', order: 7 },
+    { id: 'grid', icon: 'grid_3x3', label: 'Grid', order: 8 },
+    { id: 'flag', icon: 'table_chart', label: 'Table view', order: 9 }
   ];
 
   hasData = false;

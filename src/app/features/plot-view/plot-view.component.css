@@ -95,6 +95,49 @@
   color: #FFFFFF;
 }
 
+.manipulation-tools {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 8px;
+  gap: 22px;
+  width: 414px;
+  max-width: 100%;
+  height: 20px;
+  border-radius: 4px;
+  flex: none;
+  order: 1;
+  flex-grow: 0;
+}
+
+.tool-btn {
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #A1A1AA;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  flex-grow: 0;
+}
+
+.tool-btn mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 20px;
+}
+
+.tool-btn.is-active,
+.tool-btn:hover {
+  color: #FFFFFF;
+}
+
 .plot-body {
   display: flex;
   flex-direction: row;
@@ -105,7 +148,7 @@
   background: #1F1F22;
   border: 0.5px solid #09090B;
   overflow: hidden;
-  order: 1;
+  order: 2;
 }
 
 .waveform-container {

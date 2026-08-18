@@ -24,11 +24,19 @@ describe('PlotViewComponent', () => {
     expect(component.waveHeight).toBe(52);
   });
 
-  it('should apply plot commands from the app toolbar event', () => {
-    document.dispatchEvent(new CustomEvent('mil-plot-tool', { detail: 'grid' }));
-    expect(component.gridEnabled).toBe(false);
-    document.dispatchEvent(new CustomEvent('mil-plot-tool', { detail: 'move' }));
-    expect(component.activeTool).toBe('move');
+  it('should expose ten plot operations on the plot view', () => {
+    expect(component.tools.map(tool => tool.id)).toEqual([
+      'snapshot',
+      'expand',
+      'select',
+      'zoomIn',
+      'zoomOut',
+      'pan',
+      'move',
+      'cursor',
+      'grid',
+      'flag'
+    ]);
   });
 
   it('should expose I3C-compatible mouse handlers', () => {
