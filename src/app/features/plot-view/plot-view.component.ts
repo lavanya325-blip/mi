@@ -120,6 +120,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
+    // Do not call createSampleTrace() here. That helper used to inject
+    // fake MIL-1553 / Async square waves on startup with no trace file.
     this.observeSize();
   }
 

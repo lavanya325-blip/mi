@@ -1,5 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PlotViewComponent } from './plot-view.component';
+import { createSampleTrace } from './models/trace-data.model';
 
 describe('PlotViewComponent', () => {
   let component: PlotViewComponent;
@@ -20,6 +21,8 @@ describe('PlotViewComponent', () => {
   });
 
   it('should not plot a sample wave until backend data is loaded', () => {
+    expect(component.hasData).toBe(false);
+    component.loadTrace(createSampleTrace());
     expect(component.hasData).toBe(false);
   });
 
