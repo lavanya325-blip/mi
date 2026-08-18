@@ -1,3 +1,4 @@
+/* plot-view.component.css — styles only, not HTML */
 :host {
   display: flex;
   flex-direction: column;

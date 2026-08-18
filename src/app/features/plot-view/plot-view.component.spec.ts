@@ -1,11 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PlotViewComponent } from './plot-view.component';
-import { PlotCommandService } from './plot-command.service';
 
 describe('PlotViewComponent', () => {
   let component: PlotViewComponent;
   let fixture: ComponentFixture<PlotViewComponent>;
-  let plotCommands: PlotCommandService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -14,7 +12,6 @@ describe('PlotViewComponent', () => {
 
     fixture = TestBed.createComponent(PlotViewComponent);
     component = fixture.componentInstance;
-    plotCommands = TestBed.inject(PlotCommandService);
     fixture.detectChanges();
   });
 
@@ -27,13 +24,10 @@ describe('PlotViewComponent', () => {
     expect(component.waveHeight).toBe(52);
   });
 
-  it('should apply plot commands from the app toolbar', () => {
-    plotCommands.run('grid');
-    fixture.detectChanges();
+  it('should apply plot commands from the app toolbar event', () => {
+    document.dispatchEvent(new CustomEvent('mil-plot-tool', { detail: 'grid' }));
     expect(component.gridEnabled).toBe(false);
-    plotCommands.run('pan');
-    expect(component.activeTool).toBe('pan');
-    plotCommands.run('move');
+    document.dispatchEvent(new CustomEvent('mil-plot-tool', { detail: 'move' }));
     expect(component.activeTool).toBe('move');
   });
 

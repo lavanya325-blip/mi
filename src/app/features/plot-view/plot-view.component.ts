@@ -12,12 +12,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as d3 from 'd3';
-import { Subscription } from 'rxjs';
 import { BusPolygon, PacketBus, PlotTrack, Point } from './models/plot-track.model';
 import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
 import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
 import { BusExtensions } from './extensions/bus-extensions';
-import { PlotCommandService } from './plot-command.service';
 
 /** Toolbar ids — keep this list here so templates type-check even if plot-track.model.ts is stale. */
 export type PlotTool =
@@ -105,15 +103,10 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   private resizeObserver?: ResizeObserver;
   private readonly lineGenerator = d3.line<Point>().curve(d3.curveStepAfter);
   private pendingSample = true;
-  private commandSub?: Subscription;
 
-  constructor(
-    private cdr: ChangeDetectorRef,
-    private plotCommands: PlotCommandService
-  ) {}
+  constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    this.commandSub = this.plotCommands.commands$.subscribe(tool => this.onTool(tool));
     if (this.pendingSample && !this.hasData) {
       this.loadTrace(createSampleTrace());
     }
@@ -123,8 +116,15 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.commandSub?.unsubscribe();
     this.resizeObserver?.disconnect();
+  }
+
+  @HostListener('document:mil-plot-tool', ['$event'])
+  onMilPlotTool(event: Event): void {
+    const tool = (event as CustomEvent<string>).detail;
+    if (typeof tool === 'string' && tool.length > 0) {
+      this.onTool(tool);
+    }
   }
 
   trackTrack(_index: number, track: PlotTrack): string {

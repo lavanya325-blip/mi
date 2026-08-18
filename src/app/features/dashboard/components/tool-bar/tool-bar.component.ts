@@ -1,7 +1,10 @@
 import { Component } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { PlotCommandService } from '../../../plot-view/plot-command.service';
 
+/**
+ * Copy this whole file. Do not keep an empty ToolBarComponent class.
+ * Plot clicks are sent with a document event — no plot-command.service import.
+ */
 @Component({
   selector: 'app-tool-bar',
   standalone: true,
@@ -10,9 +13,7 @@ import { PlotCommandService } from '../../../plot-view/plot-command.service';
   styleUrl: './tool-bar.component.css'
 })
 export class ToolBarComponent {
-  constructor(private readonly plotCommands: PlotCommandService) {}
-
   onPlotTool(tool: string): void {
-    this.plotCommands.run(tool);
+    document.dispatchEvent(new CustomEvent('mil-plot-tool', { detail: tool }));
   }
 }
