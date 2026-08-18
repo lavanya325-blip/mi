@@ -39,6 +39,10 @@ describe('PlotViewComponent', () => {
     expect(component.decodeHeight).toBe(19);
   });
 
+  it('should stretch wave height to fill the plot body', () => {
+    expect(component.waveHeight).toBeGreaterThanOrEqual(36);
+  });
+
   it('should toggle grid and decode from the toolbar', () => {
     const event = new MouseEvent('click');
     component.onTool('grid', event);

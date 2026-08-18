@@ -4,6 +4,8 @@
   width: 100%;
   height: 100%;
   min-height: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
 }
 
 :host.is-fullscreen {
@@ -26,18 +28,17 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   padding: 8px;
   gap: 8px;
   width: 100%;
   height: 100%;
-  max-height: 740px;
+  max-height: none;
   background: #27272A;
   border: 0.5px solid #09090B;
-  flex: none;
+  flex: 1 1 auto;
   order: 0;
   align-self: stretch;
-  flex-grow: 1;
   min-height: 0;
   color: var(--color-text, #F4F4F5);
   font-family: 'Roboto', sans-serif;
@@ -125,24 +126,32 @@
   align-self: stretch;
   background: #1F1F22;
   border: 0.5px solid #09090B;
-  overflow: auto;
+  overflow: hidden;
   order: 2;
 }
 
 .waveform-container {
+  position: relative;
   flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  height: 100%;
 }
 
 .waveform-svg {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
+  height: 100%;
   touch-action: none;
 }
 
 .lane-rail {
   width: 118px;
   flex: none;
+  align-self: stretch;
+  height: 100%;
   display: flex;
   flex-direction: column;
   background: #242426;

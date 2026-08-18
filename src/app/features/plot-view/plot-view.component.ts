@@ -93,7 +93,8 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   plotWidth = 800;
   plotHeight = 520;
   readonly axisHeight = 24;
-  readonly waveHeight = 52;
+  /** Stretched to fill the plot body so there is no empty band under Channel 4. */
+  waveHeight = 52;
   /** Figma Group 9: 1164 × 19 */
   readonly decodeHeight = 19;
 
@@ -583,12 +584,23 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   private measurePlot(): void {
-    const rect = this.waveformContainer?.nativeElement.getBoundingClientRect();
-    if (!rect) {
+    const host = this.waveformContainer?.nativeElement;
+    if (!host) {
       return;
     }
-    this.plotWidth = Math.max(240, rect.width);
-    this.plotHeight = this.contentHeight();
+    const width = host.clientWidth;
+    const height = host.clientHeight;
+    this.plotWidth = Math.max(240, width);
+    this.plotHeight = Math.max(this.minContentHeight(), height);
+
+    const decodeExtra =
+      this.tracks.filter(track => track.kind === 'bus' && this.decodeEnabled).length * this.decodeHeight;
+    const waveArea = Math.max(this.tracks.length * 36, this.plotHeight - this.axisHeight - decodeExtra);
+    this.waveHeight = Math.max(36, Math.floor(waveArea / this.tracks.length));
+  }
+
+  private minContentHeight(): number {
+    return this.tracks.length * 36 + this.decodeHeight * 2 + this.axisHeight;
   }
 
   private resizePlot(): void {
