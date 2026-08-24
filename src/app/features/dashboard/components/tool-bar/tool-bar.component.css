@@ -133,22 +133,79 @@
   flex-shrink: 0;
 }
 
-.toolbar-switch {
+.header-bottom-control {
   display: flex;
   align-items: center;
-  width: 41px;
-  height: 20px;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
   padding: 0;
-  background: #A1A1AA;
-  border-radius: 11px;
+  border: none;
+  background: transparent;
+  color: #A1A1AA;
   cursor: pointer;
-  flex-shrink: 0;
+  flex: none;
 }
 
-.switch-circle {
-  width: 16px;
-  height: 16px;
-  margin-left: 2px;
-  background: #FFFFFF;
+.header-bottom-control:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.header-bottom-control:hover:not(:disabled) {
+  color: #FFFFFF;
+}
+
+.header-bottom-control__icon {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.header-bottom-control svg {
+  display: block;
+}
+
+.header-bottom-control path.connected {
+  color: #22C55E;
+  fill: #22C55E;
+}
+
+.circle {
+  position: absolute;
+  right: -1px;
+  bottom: -1px;
+  width: 8px;
+  height: 8px;
   border-radius: 50%;
+  background: #22C55E;
+  box-shadow: 0 0 0 2px #27272A;
+}
+
+.spinner {
+  position: absolute;
+  inset: 4px;
+  border: 2px solid rgba(161, 161, 170, 0.35);
+  border-top-color: #22C55E;
+  border-radius: 50%;
+  animation: hardware-spin 0.7s linear infinite;
+}
+
+@keyframes hardware-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.toolbar-right-spacer {
+  flex: 1 1 auto;
+  min-width: 8px;
+}
+
+.theme-button.active {
+  color: #FFFFFF;
+}
+
+.toolbar-switch {
+  display: none;
 }

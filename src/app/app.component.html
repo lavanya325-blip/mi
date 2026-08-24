@@ -4,7 +4,12 @@
 
     <app-menu-bar></app-menu-bar>
 
-    <app-tool-bar></app-tool-bar>
+    <app-tool-bar
+      [isDarkMode]="isDarkMode"
+      (darkModeToggle)="toggleDarkMode()"
+      (connectionChange)="onHardwareConnection($event)"
+      (selectionChange)="onSelectionChange($event)"
+    ></app-tool-bar>
 
   </header>
 

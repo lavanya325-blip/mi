@@ -45,6 +45,9 @@ export class AppComponent {
 
   title = 'PGY-I3C-EXPD';
 
+  isDarkMode = true;
+  isHardwareConnected = false;
+
   selectedRole = 'Controller';
   selectedMode = 'Script';
   selectedWindow = 'busConfig';
@@ -53,6 +56,20 @@ export class AppComponent {
   ctsDeviceValue = 'Target';
   selecteddevicemode = 'EX_PD';
   showDefaultView = 'DEFAULT';
+
+  constructor() {
+    this.applyTheme(this.isDarkMode);
+  }
+
+  toggleDarkMode(): void {
+    this.isDarkMode = !this.isDarkMode;
+    this.applyTheme(this.isDarkMode);
+  }
+
+  onHardwareConnection(connected: boolean): void {
+    this.isHardwareConnected = connected;
+    console.log(connected ? 'Hardware connected' : 'Hardware disconnected');
+  }
 
   onSelectionChange(selection: {
     role: string;
@@ -77,8 +94,24 @@ export class AppComponent {
   }
 
   @HostListener('window:beforeunload', ['$event'])
-  beforeUnloadHandler(event: BeforeUnloadEvent) {
+  beforeUnloadHandler(_event: BeforeUnloadEvent) {
     this.cleanup();
+  }
+
+  private applyTheme(dark: boolean): void {
+    const html = document.documentElement;
+    const body = document.body;
+    const appRoot = document.querySelector('app-root');
+    const classes = ['dark-mode', 'light-mode', 'dark-theme', 'light-theme'];
+
+    html.classList.remove(...classes);
+    body.classList.remove(...classes);
+    appRoot?.classList.remove(...classes);
+
+    const theme = dark ? 'dark-mode' : 'light-mode';
+    html.classList.add(theme);
+    body.classList.add(theme);
+    appRoot?.classList.add(theme);
   }
 
   private cleanup() {

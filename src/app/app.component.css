@@ -9,6 +9,28 @@ body {
   overflow: hidden;
 }
 
+html.dark-mode,
+body.dark-mode {
+  --bg-color: #27272A;
+  --outer-block-bg: #242426;
+  --inner-block-border: #09090B;
+  --input-second-bg: #27272A;
+  --color-text: #D4D4D8;
+  --btn-bg: #1480c3;
+  color-scheme: dark;
+}
+
+html.light-mode,
+body.light-mode {
+  --bg-color: #F4F4F5;
+  --outer-block-bg: #FFFFFF;
+  --inner-block-border: #D4D4D8;
+  --input-second-bg: #FFFFFF;
+  --color-text: #27272A;
+  --btn-bg: #1480c3;
+  color-scheme: light;
+}
+
 
 .container {
   display: flex;

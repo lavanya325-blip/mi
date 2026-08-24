@@ -1,70 +1,136 @@
 <div class="tool-bar">
 
   <div class="toolbar-left">
-    <button type="button" class="toolbar-icon-button" title="Options">
-      <mat-icon>tune</mat-icon>
+
+    <button
+      type="button"
+      class="header-bottom-control"
+      matTooltip="Check Hardware Connection"
+      (click)="connect()"
+      [disabled]="IsLoadingConnection || connectDisabled"
+    >
+      <div class="header-bottom-control__icon">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            [class.connected]="isconnected"
+            d="M6.81288 4.16228C6.29328 4.16228 5.79495 4.36869 5.42754 4.73611C5.06012 5.10352 4.85371 5.60185 4.85371 6.12145C4.85371 6.64106 5.06012 7.13938 5.42754 7.5068C5.79495 7.87422 6.29328 8.08063 6.81288 8.08063C7.33249 8.08063 7.83081 7.87422 8.19823 7.5068C8.56565 7.13938 8.77206 6.64106 8.77206 6.12145C8.77206 5.60185 8.56565 5.10352 8.19823 4.73611C7.83081 4.36869 7.33249 4.16228 6.81288 4.16228ZM2.89453 6.12145C2.89359 5.16707 3.241 4.24516 3.87155 3.52875C4.5021 2.81234 5.37244 2.35069 6.31922 2.23045C7.26599 2.11021 8.2241 2.33965 9.01371 2.87569C9.80333 3.41174 10.3702 4.21755 10.6078 5.14186H18.6492L18.7286 5.15558C19.5528 5.30106 20.3313 5.63829 21.0012 6.14006C21.7888 6.74545 22.4863 7.70251 22.4863 9.06022C22.4863 10.4179 21.7908 11.375 21.0003 11.9804C20.3306 12.482 19.5525 12.8192 18.7286 12.9649L18.6492 12.9786H6.81288C6.58072 12.9786 6.05664 13.1235 5.5884 13.4978C5.15052 13.8484 4.85371 14.3226 4.85371 14.9377C4.85371 15.5529 5.15052 16.027 5.5884 16.3777C6.05664 16.7519 6.58072 16.8969 6.81288 16.8969H17.5884V14.448L22.1601 17.8765L17.5884 21.3051V18.8561H6.81288C6.06546 18.8561 5.12016 18.5113 4.36391 17.9059C3.57731 17.278 2.89453 16.2827 2.89453 14.9377C2.89453 13.5928 3.57731 12.5985 4.36391 11.9696C5.12016 11.3632 6.06546 11.0194 6.81288 11.0194H18.4798C18.8461 10.9459 19.3781 10.7549 19.8091 10.4258C20.244 10.0927 20.5271 9.66168 20.5271 9.06022C20.5271 8.45875 20.243 8.02871 19.8091 7.69467C19.4136 7.40392 18.9603 7.20148 18.4798 7.10104H10.6078C10.3671 8.02233 9.79929 8.82452 9.01042 9.35782C8.22155 9.89111 7.26555 10.1191 6.32091 9.99909C5.37628 9.87912 4.50761 9.41944 3.87709 8.70588C3.24657 7.99232 2.89731 7.07367 2.89453 6.12145Z"
+            fill="currentColor"
+          ></path>
+        </svg>
+
+        <div class="spinner" *ngIf="IsLoadingConnection"></div>
+        <div class="circle" *ngIf="isconnected"></div>
+      </div>
     </button>
 
     <div class="toolbar-divider"></div>
 
-    <div class="toolbar-menu-item">
+    <div class="toolbar-menu-item" (click)="onMenuItem('Menu Item 1')">
       <span>Menu Item</span>
       <mat-icon class="menu-arrow">play_arrow</mat-icon>
     </div>
 
-    <button type="button" class="toolbar-icon-button" title="Trigger">
+    <button
+      type="button"
+      class="toolbar-icon-button"
+      title="Trigger"
+      (click)="onTrigger()"
+    >
       <mat-icon>bolt</mat-icon>
     </button>
 
-    <div class="toolbar-menu-item">
+    <div class="toolbar-menu-item" (click)="onMenuItem('Menu Item 2')">
       <span>Menu Item</span>
       <mat-icon class="menu-arrow">play_arrow</mat-icon>
     </div>
 
-    <div class="toolbar-menu-item">
-      <span>Menu Item</span>
-      <mat-icon class="menu-arrow">play_arrow</mat-icon>
-    </div>
-
-    <button type="button" class="toolbar-icon-button blue-icon" title="Run">
-      <mat-icon>play_circle</mat-icon>
+    <button
+      type="button"
+      class="toolbar-icon-button blue-icon"
+      [title]="isRunning ? 'Stop Acquisition' : 'Run Acquisition'"
+      (click)="onRun()"
+    >
+      <mat-icon>{{ isRunning ? 'stop_circle' : 'play_circle' }}</mat-icon>
     </button>
 
-    <button type="button" class="toolbar-icon-button" title="Upload">
+    <button
+      type="button"
+      class="toolbar-icon-button"
+      title="Upload"
+      (click)="onUpload()"
+    >
       <mat-icon>drive_folder_upload</mat-icon>
     </button>
 
-    <button type="button" class="toolbar-icon-button" title="Settings">
+    <button
+      type="button"
+      class="toolbar-icon-button"
+      title="Settings"
+      (click)="onSettings()"
+    >
       <mat-icon>settings</mat-icon>
     </button>
+
   </div>
 
   <div class="toolbar-middle">
     <div class="toolbar-divider"></div>
 
-    <button type="button" class="toolbar-icon-button" title="Search">
+    <button
+      type="button"
+      class="toolbar-icon-button"
+      title="Search"
+      (click)="onSearch()"
+    >
       <mat-icon>search</mat-icon>
     </button>
 
-    <button type="button" class="toolbar-icon-button" title="Previous">
+    <button
+      type="button"
+      class="toolbar-icon-button"
+      title="Previous"
+      (click)="onPrevious()"
+    >
       <mat-icon>arrow_circle_left</mat-icon>
     </button>
 
-    <button type="button" class="toolbar-icon-button" title="Next">
+    <button
+      type="button"
+      class="toolbar-icon-button"
+      title="Next"
+      (click)="onNext()"
+    >
       <mat-icon>arrow_circle_right</mat-icon>
     </button>
   </div>
 
   <div class="toolbar-right">
-    <div class="toolbar-divider"></div>
+    <div class="toolbar-right-spacer"></div>
 
-    <button type="button" class="toolbar-icon-button" title="Webhook">
+    <button
+      type="button"
+      class="toolbar-icon-button"
+      title="Webhook"
+      (click)="onWebhook()"
+    >
       <mat-icon>webhook</mat-icon>
     </button>
 
-    <div class="toolbar-switch">
-      <div class="switch-circle"></div>
-    </div>
+    <button
+      type="button"
+      class="toolbar-icon-button theme-button"
+      [class.active]="isDarkMode"
+      [title]="isDarkMode ? 'Light Mode' : 'Dark Mode'"
+      (click)="toggleDarkMode()"
+    >
+      <mat-icon>{{ isDarkMode ? 'light_mode' : 'dark_mode' }}</mat-icon>
+    </button>
   </div>
 
 </div>
