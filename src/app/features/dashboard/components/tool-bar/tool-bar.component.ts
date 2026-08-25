@@ -10,7 +10,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Subscription } from 'rxjs';
-import { HardwareConnectionService } from '../../services/hardware-connection.service';
+import { DashboardModel } from '../../models/dashboard.model';
 
 @Component({
   selector: 'app-tool-bar',
@@ -54,10 +54,10 @@ export class ToolBarComponent implements OnInit, OnDestroy {
   private wasConnected = false;
   private statusSub?: Subscription;
 
-  constructor(private hardwareConnection: HardwareConnectionService) {}
+  constructor(private dashboardModel: DashboardModel) {}
 
   ngOnInit(): void {
-    this.statusSub = this.hardwareConnection.connectionStatus$.subscribe(status => {
+    this.statusSub = this.dashboardModel.connectionStatus$.subscribe(status => {
       const previouslyConnected = this.wasConnected;
       this.isconnected = status.connected;
       this.IsLoadingConnection = status.connecting;
@@ -66,13 +66,11 @@ export class ToolBarComponent implements OnInit, OnDestroy {
         this.connectionChange.emit(this.isconnected);
       }
 
-      // I3C: disconnect keeps the current mode
       if (!this.isconnected) {
         this.wasConnected = false;
         return;
       }
 
-      // I3C: reconnect (false → true) returns to EX_PD setup
       if (!previouslyConnected && this.isconnected) {
         this.emitConnectedSelection();
       }
@@ -92,7 +90,7 @@ export class ToolBarComponent implements OnInit, OnDestroy {
 
     this.connectDisabled = true;
     try {
-      await this.hardwareConnection.connectToDevice();
+      await this.dashboardModel.ConnectToDevice();
     } finally {
       this.connectDisabled = false;
     }
