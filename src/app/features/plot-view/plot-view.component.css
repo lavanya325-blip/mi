@@ -1,0 +1,295 @@
+/* plot-view.component.css — styles only, not HTML */
+:host {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
+}
+
+:host.is-fullscreen {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  width: 100vw;
+  height: 100vh;
+  background: #27272A;
+}
+
+:host.is-fullscreen .plot-view {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+}
+
+/* CTS Master window */
+.plot-view {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  background: #27272A;
+  border: 0.5px solid #09090B;
+  flex: 1 1 auto;
+  order: 0;
+  align-self: stretch;
+  min-height: 0;
+  color: var(--color-text, #F4F4F5);
+  font-family: 'Roboto', sans-serif;
+}
+
+.plot-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  height: 24px;
+  flex: none;
+  order: 0;
+}
+
+.plot-title {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 20px;
+  color: var(--color-text, #F4F4F5);
+}
+
+.plot-header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  padding: 4px;
+  border: none;
+  background: transparent;
+  color: #A1A1AA;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  flex-grow: 0;
+}
+
+.icon-btn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.icon-btn.is-active,
+.icon-btn:hover {
+  color: #FFFFFF;
+}
+
+.manipulation-tools {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 8px;
+  gap: 22px;
+  width: 414px;
+  max-width: 100%;
+  height: 20px;
+  border-radius: 4px;
+  flex: none;
+  order: 1;
+  flex-grow: 0;
+}
+
+.tool-btn {
+  box-sizing: border-box;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #A1A1AA;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  flex-grow: 0;
+}
+
+.tool-btn svg {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.tool-btn mat-icon {
+  width: 20px;
+  height: 20px;
+  font-size: 20px;
+  line-height: 20px;
+}
+
+.tool-btn.is-active,
+.tool-btn:hover {
+  color: #FFFFFF;
+}
+
+.plot-body {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
+  background: #1F1F22;
+  border: 0.5px solid #09090B;
+  overflow: hidden;
+  order: 2;
+}
+
+.waveform-container {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+}
+
+.waveform-svg {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.lane-rail {
+  width: 118px;
+  flex: none;
+  align-self: stretch;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #242426;
+  border-right: 0.5px solid #09090B;
+}
+
+.lane-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+  box-sizing: border-box;
+}
+
+.lane-bar {
+  width: 4px;
+  align-self: stretch;
+  flex: none;
+}
+
+.lane-name {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--color-text, #F4F4F5);
+}
+
+.lane-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #A1A1AA;
+}
+
+.swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 1px;
+}
+
+.grid-line {
+  stroke: #3F3F46;
+  stroke-width: 0.5;
+  stroke-dasharray: 3 4;
+}
+
+.grid-line.lane-sep {
+  stroke-dasharray: none;
+}
+
+.wave-path {
+  fill: none;
+  stroke-width: 1.5;
+}
+
+/* Group 9 — decoded bus words, 19px */
+.bus-decode {
+  height: 19px;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+  z-index: 1;
+}
+
+.decode-rail {
+  stroke: #7DD3FC;
+  stroke-width: 1;
+}
+
+.decode-idle {
+  stroke: #E879F9;
+  stroke-width: 1;
+}
+
+.bus-poly {
+  fill-opacity: 0.9;
+  stroke: #E8A04A;
+  stroke-width: 1.1;
+}
+
+.bus-text {
+  fill: #FFFFFF;
+  font-size: 9px;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  pointer-events: none;
+}
+
+.zoom-overlay {
+  fill: rgba(20, 128, 195, 0.22);
+  stroke: var(--btn-bg, #1480c3);
+  stroke-width: 1;
+  pointer-events: none;
+}
+
+.cursor-line,
+.marker-line {
+  stroke: #F5C518;
+  stroke-width: 1.2;
+  pointer-events: none;
+}
+
+.marker-line {
+  stroke: #00E4B1;
+  stroke-dasharray: 4 3;
+}
+
+.axis-label {
+  fill: #A1A1AA;
+  font-size: 10px;
+  text-anchor: middle;
+}

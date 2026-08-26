@@ -1,0 +1,58 @@
+<div class="container">
+
+  <header class="site-header">
+
+    <app-menu-bar></app-menu-bar>
+
+    <app-tool-bar
+      [isDarkMode]="isDarkMode"
+      (darkModeToggle)="toggleDarkMode()"
+      (connectionChange)="onHardwareConnection($event)"
+      (selectionChange)="onSelectionChange($event)"
+    ></app-tool-bar>
+
+  </header>
+
+
+  <main class="workspace">
+
+    <!-- ================= LEFT PANEL ================= -->
+
+    <div class="left-panel">
+
+      <app-channel-selection>
+      </app-channel-selection>
+
+
+      <app-import-section>
+      </app-import-section>
+
+
+      <app-display-section>
+      </app-display-section>
+
+    </div>
+
+
+    <!-- ================= PLOT ================= -->
+
+    <div class="plot-area">
+
+      <app-plot-view>
+      </app-plot-view>
+
+    </div>
+
+
+    <!-- ================= RIGHT PANEL ================= -->
+
+    <aside class="right-panel" aria-label="Post Analysis">
+    </aside>
+
+  </main>
+
+
+  <footer>
+  </footer>
+
+</div>

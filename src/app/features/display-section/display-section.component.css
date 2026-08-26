@@ -1,0 +1,233 @@
+/* Frame 1171276468
+   Colours: I3C tokens so toolbar light/dark applies after merge.
+   Hex after the comma = Figma dark (300 / #D4D4D8). */
+
+:host {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px;
+  gap: 12px;
+  width: 255px;
+  height: 76px;
+  border-top: 1px solid var(--inner-block-border, #000000);
+  flex: none;
+  order: 10;
+  align-self: stretch;
+  flex-grow: 0;
+  font-family: 'Roboto', sans-serif;
+  color: var(--color-text, #D4D4D8);
+}
+
+.display-section {
+  display: contents;
+}
+
+/* Subgroup — Display title, M3/label/medium */
+.section-title {
+  box-sizing: border-box;
+  width: 247px;
+  height: 16px;
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.5px;
+  color: var(--color-text, #D4D4D8);
+  flex: none;
+  order: 0;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+.view-row {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  width: 247px;
+  height: 32px;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+/* Subgroup — View, M3/label/medium */
+.view-label {
+  box-sizing: border-box;
+  width: 28px;
+  height: 16px;
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-weight: 500;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: 0.5px;
+  color: var(--color-text, #D4D4D8);
+  flex: none;
+  order: 0;
+  flex-grow: 0;
+}
+
+/* Frame 1171276449 — field fills leftover width so the long option fits one line */
+.view-select-wrap {
+  position: relative;
+  width: 203px;
+  height: 32px;
+  flex: none;
+  order: 1;
+  align-self: stretch;
+  flex-grow: 0;
+}
+
+.view-select {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0;
+  width: 203px;
+  height: 32px;
+  border: 1px solid var(--inner-block-border, #000000);
+  border-radius: 2px;
+  background-color: #27272A;
+  background-color: var(--input-second-bg, #27272A);
+  color: #D4D4D8;
+  color: var(--color-text, #D4D4D8);
+  cursor: pointer;
+  forced-color-adjust: none;
+}
+
+.view-select:hover,
+.view-select:focus {
+  outline: none;
+  border-color: var(--btn-bg, #1480c3);
+}
+
+/* placeholder-text — M3/body/small 0.4 */
+.placeholder-text {
+  box-sizing: border-box;
+  min-width: 0;
+  height: 16px;
+  margin-left: 8px;
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.4px;
+  color: var(--color-text, #D4D4D8);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1 1 auto;
+  order: 1;
+  flex-grow: 1;
+}
+
+/* state-layer — dropdown chevron */
+.state-layer {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  padding: 6px 4px;
+  gap: 4px;
+  width: 20px;
+  height: 24px;
+  color: var(--color-text, #D4D4D8);
+  flex: none;
+  order: 2;
+  flex-grow: 0;
+}
+
+.state-layer svg {
+  display: block;
+  width: 10px;
+  height: 6px;
+}
+
+.view-menu {
+  position: absolute;
+  left: 0;
+  right: auto;
+  top: calc(100% + 2px);
+  z-index: 20;
+  margin: 0;
+  padding: 2px 0;
+  list-style: none;
+  min-width: 100%;
+  width: max-content;
+  border: 1px solid var(--inner-block-border, #000000);
+  border-radius: 2px;
+  background-color: #27272A;
+  background-color: var(--input-second-bg, #27272A);
+  max-height: 120px;
+  overflow: auto;
+  white-space: nowrap;
+}
+
+.view-option {
+  box-sizing: border-box;
+  height: 16px;
+  margin: 4px 8px;
+  font-family: 'Roboto', sans-serif;
+  font-style: normal;
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 16px;
+  display: flex;
+  align-items: center;
+  letter-spacing: 0.4px;
+  color: var(--color-text, #D4D4D8);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.view-option:hover,
+.view-option.is-selected {
+  color: var(--color-text, #F4F4F5);
+}
+
+/* If a leftover <select> is still in the desktop HTML, force it dark.
+   Windows paints unstyled native selects white (screenshot vs localhost). */
+app-display-section select,
+.display-section select,
+.view-select-wrap > select {
+  box-sizing: border-box;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  color-scheme: dark;
+  forced-color-adjust: none;
+  width: 203px;
+  height: 32px;
+  margin: 0;
+  padding: 0 20px 0 8px;
+  border: 1px solid #000000;
+  border-radius: 2px;
+  background-color: #27272A !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none'%3E%3Cpath fill='%23D4D4D8' d='M1 1.25 5 5.25 9 1.25'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 4px center;
+  color: #D4D4D8 !important;
+  font-family: 'Roboto', sans-serif;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0.4px;
+}
+
+app-display-section select option,
+.display-section select option {
+  background-color: #27272A;
+  color: #D4D4D8;
+  white-space: nowrap;
+}

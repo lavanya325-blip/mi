@@ -1,0 +1,44 @@
+<section class="display-section" aria-label="Display">
+  <div class="section-title">Display</div>
+
+  <div class="view-row">
+    <span class="view-label" id="display-view-label">View</span>
+
+    <div class="view-select-wrap">
+      <button
+        type="button"
+        class="view-select"
+        id="display-view"
+        aria-labelledby="display-view-label"
+        aria-haspopup="listbox"
+        [attr.aria-expanded]="menuOpen"
+        (click)="toggleMenu(); $event.stopPropagation()"
+      >
+        <span class="placeholder-text">{{ selectedView }}</span>
+        <span class="state-layer" aria-hidden="true">
+          <svg viewBox="0 0 10 6">
+            <path fill="currentColor" d="M1 1.25 5 5.25 9 1.25"/>
+          </svg>
+        </span>
+      </button>
+
+      <ul
+        *ngIf="menuOpen"
+        class="view-menu"
+        role="listbox"
+        (click)="$event.stopPropagation()"
+      >
+        <li
+          *ngFor="let view of views"
+          class="view-option"
+          role="option"
+          [class.is-selected]="view === selectedView"
+          [attr.aria-selected]="view === selectedView"
+          (click)="selectView(view)"
+        >
+          {{ view }}
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>

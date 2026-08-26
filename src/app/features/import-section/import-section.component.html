@@ -1,0 +1,39 @@
+<section class="import-section" aria-label="Import">
+  <div class="section-title">Import</div>
+
+  @for (field of fields; track field.key) {
+    <div class="import-field">
+      <label class="field-label" [attr.for]="'import-' + field.key">
+        {{ field.label }}
+      </label>
+
+      <div class="file-row">
+        <button
+          type="button"
+          class="browse-btn"
+          [attr.aria-label]="'Browse ' + field.label"
+          (click)="browse(field)"
+        >
+          <span class="browse-dots">...</span>
+        </button>
+
+        <input
+          class="path-input"
+          type="text"
+          [id]="'import-' + field.key"
+          [ngModel]="field.path"
+          (ngModelChange)="field.path = $event"
+          placeholder="D:/file/folder/sss"
+          spellcheck="false"
+        />
+      </div>
+    </div>
+  }
+
+  <input
+    #fileInput
+    class="hidden-file-input"
+    type="file"
+    (change)="onFileSelected($event)"
+  />
+</section>
