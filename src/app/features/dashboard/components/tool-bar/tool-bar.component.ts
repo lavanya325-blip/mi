@@ -54,9 +54,10 @@ export class ToolBarComponent implements OnInit, OnDestroy {
   private wasConnected = false;
   private statusSub?: Subscription;
 
-  constructor(private dashboardModel: DashboardModel) {}
+  constructor(public dashboardModel: DashboardModel) {}
 
   ngOnInit(): void {
+    // I3C toolbar: dashboardModel.connectionStatus$
     this.statusSub = this.dashboardModel.connectionStatus$.subscribe(status => {
       const previouslyConnected = this.wasConnected;
       this.isconnected = status.connected;
@@ -66,15 +67,16 @@ export class ToolBarComponent implements OnInit, OnDestroy {
         this.connectionChange.emit(this.isconnected);
       }
 
+      // DISCONNECT: keep current mode
       if (!this.isconnected) {
         this.wasConnected = false;
         return;
       }
 
+      // RECONNECT: false → true (I3C selectMode EX_PD + hideSetupView)
       if (!previouslyConnected && this.isconnected) {
         this.emitConnectedSelection();
       }
-
       this.wasConnected = this.isconnected;
     });
   }
@@ -83,13 +85,10 @@ export class ToolBarComponent implements OnInit, OnDestroy {
     this.statusSub?.unsubscribe();
   }
 
+  /** I3C toolbar connect() — do not use setTimeout to toggle isconnected. */
   async connect(): Promise<void> {
-    if (this.IsLoadingConnection || this.connectDisabled) {
-      return;
-    }
-
-    this.connectDisabled = true;
     try {
+      this.connectDisabled = true;
       await this.dashboardModel.ConnectToDevice();
     } finally {
       this.connectDisabled = false;
