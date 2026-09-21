@@ -1,0 +1,275 @@
+syntax = "proto3";
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+import "CommonTypes.proto";
+import "WaveformTypes.proto";
+import "google/protobuf/descriptor.proto";
+package MIL1553;
+option csharp_namespace = "Prodigy.Protos.MIL1553";
+
+/* MIL-STD-1553B software frames.
+   Word = 20 bit times: 3-bit invalid Manchester sync + 16 information bits + odd parity.
+   Bit rate = 1.0 Mbit/s. Data code = Manchester II biphase-L. */
+
+message Configuration_MIL1553 {
+    int32 Id = 1;
+    CommonTypes.Channels ChannelIndex_BusA = 2;
+    optional CommonTypes.Channels ChannelIndex_BusB = 3;
+    /* RT map keyed by unique address 0–30. Address 31 is broadcast and is not assigned. */
+    map<int32, RemoteTerminalInfo> RemoteTerminals = 4;
+    bool DualRedundant = 5;
+    bool BroadcastEnabled = 6;
+    bool IllegalCommandDetection = 7;
+    bool InstrumentationBitEnabled = 8;
+}
+
+message CommandFrame {
+    uint32 CommandValue = 1;                          /* 16 information bits */
+    PacketType PacketType = 2;
+    ProtocolMode ProtocolMode = 3;
+    HostDeviceType HostDevice = 4;
+    ModeCode Description = 5;                         /* mode code, or Data_Message */
+    TransferType TransferType = 6;                    /* T/R bit */
+    ParityType Parity = 7;
+    ErrorType ErrorType = 8;
+    uint32 RtAddress = 9;                             /* 5 bits; 31 = broadcast */
+    uint32 SubaddressMode = 10;                       /* 5 bits; 0 or 31 => mode */
+    uint32 WordCountOrModeCode = 11;                  /* 5 bits; 00000 => 32 words */
+    bool IsModeCommand = 12;
+    bool IsBroadcast = 13;
+    CommonTypes.MessageInterval SyncInterval = 14;
+    CommonTypes.MessageInterval CommandInterval = 15;
+    CommonTypes.MessageInterval ParityInterval = 16;
+}
+
+message DataFrame {
+    uint32 DataValue = 1;                             /* 16 bits, MSB first */
+    PacketType PacketType = 2;
+    ProtocolMode ProtocolMode = 3;
+    HostDeviceType HostDevice = 4;
+    DataDescription Description = 5;
+    ParityType Parity = 6;
+    ErrorType ErrorType = 7;
+    CommonTypes.MessageInterval SyncInterval = 8;
+    CommonTypes.MessageInterval DataInterval = 9;
+    CommonTypes.MessageInterval ParityInterval = 10;
+}
+
+message StatusFrame {
+    uint32 StatusValue = 1;                           /* 16 information bits */
+    PacketType PacketType = 2;
+    ProtocolMode ProtocolMode = 3;
+    HostDeviceType HostDevice = 4;
+    StatusDescription Description = 5;
+    ParityType Parity = 6;
+    ErrorType ErrorType = 7;
+    uint32 RtAddress = 8;
+    bool MessageError = 9;
+    bool Instrumentation = 10;
+    bool ServiceRequest = 11;
+    uint32 Reserved = 12;                             /* bits 12–14, shall be 0 */
+    bool BroadcastCommandReceived = 13;
+    bool Busy = 14;
+    bool SubsystemFlag = 15;
+    bool DynamicBusControlAcceptance = 16;
+    bool TerminalFlag = 17;
+    bool Suppressed = 18;                             /* broadcast withholds status */
+    CommonTypes.MessageInterval SyncInterval = 19;
+    CommonTypes.MessageInterval StatusInterval = 20;
+    CommonTypes.MessageInterval ParityInterval = 21;
+}
+
+message GapFrame {
+    GapType GapType = 1;
+    CommonTypes.MessageInterval GapInterval = 2;
+}
+
+message PacketMIL1553 {
+    bool HasIntermessageGap = 1;
+    oneof Packet {
+        CommandFrame Command = 2;
+        DataFrame Data = 3;
+        StatusFrame Status = 4;
+        GapFrame Gap = 5;
+    }
+}
+
+message ExtendedFrame_MIL1553 {
+    FrameType Frame = 1;
+    ErrorType Error = 2;
+    BusType Bus = 3;
+    int32 Device = 4;                                 /* unique RT address, or 31 broadcast */
+    double CommandFrequency = 5;
+    double DataFrequency = 6;
+    repeated PacketMIL1553 Packets = 7;
+}
+
+message RemoteTerminalInfo {
+    int32 Address = 1;                                /* 0–30 */
+    bool DynamicBusControlCapable = 2;
+    bool BroadcastEnabled = 3;
+    bool BusyBitImplemented = 4;
+    bool ServiceRequestImplemented = 5;
+    bool SubsystemFlagImplemented = 6;
+    bool TerminalFlagImplemented = 7;
+}
+
+enum PacketType {
+    Command = 0;
+    Data = 1;
+    Status = 2;
+    Mode = 3;
+    Gap = 4;
+    PacketType_Unknown = 5;
+}
+
+/* Table I / §4.3.3.5.1.7. Subaddress/mode 00000 or 11111 selects this field.
+   00000–01111: no data word, T/R = 1.
+   10000–11111: one data word. */
+enum ModeCode {
+    Dynamic_Bus_Control = 0x00;
+    Synchronize = 0x01;
+    Transmit_Status_Word = 0x02;
+    Initiate_Self_Test = 0x03;
+    Transmitter_Shutdown = 0x04;
+    Override_Transmitter_Shutdown = 0x05;
+    Inhibit_Terminal_Flag_Bit = 0x06;
+    Override_Inhibit_Terminal_Flag_Bit = 0x07;
+    Reset_Remote_Terminal = 0x08;
+    Reserved_Without_Data_09 = 0x09;
+    Reserved_Without_Data_0A = 0x0A;
+    Reserved_Without_Data_0B = 0x0B;
+    Reserved_Without_Data_0C = 0x0C;
+    Reserved_Without_Data_0D = 0x0D;
+    Reserved_Without_Data_0E = 0x0E;
+    Reserved_Without_Data_0F = 0x0F;
+    Transmit_Vector_Word = 0x10;
+    Synchronize_With_Data = 0x11;
+    Transmit_Last_Command = 0x12;
+    Transmit_BIT_Word = 0x13;
+    Selected_Transmitter_Shutdown = 0x14;
+    Override_Selected_Transmitter_Shutdown = 0x15;
+    Reserved_With_Data_16 = 0x16;
+    Reserved_With_Data_17 = 0x17;
+    Reserved_With_Data_18 = 0x18;
+    Reserved_With_Data_19 = 0x19;
+    Reserved_With_Data_1A = 0x1A;
+    Reserved_With_Data_1B = 0x1B;
+    Reserved_With_Data_1C = 0x1C;
+    Reserved_With_Data_1D = 0x1D;
+    Reserved_With_Data_1E = 0x1E;
+    Reserved_With_Data_1F = 0x1F;
+    Data_Message = 256;
+    ModeCode_Unknown = -1;
+}
+
+/* §4.3.3.6 / figures 6 and 7. No other formats on the bus. */
+enum FrameType {
+    BC_to_RT = 0;
+    RT_to_BC = 1;
+    RT_to_RT = 2;
+    Mode_Without_Data = 3;
+    Mode_With_Data_Transmit = 4;
+    Mode_With_Data_Receive = 5;
+    Broadcast_BC_to_RT = 6;
+    Broadcast_RT_to_RT = 7;
+    Broadcast_Mode_Without_Data = 8;
+    Broadcast_Mode_With_Data = 9;
+    FrameType_Unknown = -1;
+}
+
+enum HostDeviceType {
+    HostDeviceType_NA = 0;
+    BusController = 1;
+    RemoteTerminal = 2;
+    BusMonitor = 3;
+}
+
+enum ProtocolMode {
+    ProtocolMode_NA = 0;
+    MIL_STD_1553B = 1;
+    Manchester_II = 2;
+}
+
+enum BusType {
+    BusType_NA = 0;
+    Bus_A = 1;
+    Bus_B = 2;
+}
+
+enum TransferType {
+    Receive = 0;                                      /* T/R = 0 */
+    Transmit = 1;                                     /* T/R = 1 */
+    TransferType_NA = -1;
+}
+
+enum ParityType {
+    Zero = 0;
+    One = 1;
+}
+
+enum AddressType {
+    Unique_RT_Address = 0;
+    Broadcast_Address = 1;                            /* decimal 31 */
+    Unassigned = 2;
+    AddressType_NA = 3;
+}
+
+enum DataDescription {
+    Payload = 0x00;
+    Vector_Word = 0x01;
+    Last_Command_Word = 0x02;
+    BIT_Word = 0x03;
+    Synchronize_Data = 0x04;
+    Selected_Transmitter = 0x05;
+    DataDescription_NA = -1;
+}
+
+enum StatusDescription {
+    Status_Normal = 0;
+    Status_Message_Error = 1;
+    Status_Busy = 2;
+    Status_Service_Request = 3;
+    Status_Broadcast_Received = 4;
+    Status_Subsystem_Flag = 5;
+    Status_Terminal_Flag = 6;
+    Status_Dynamic_Bus_Accept = 7;
+    Status_Suppressed = 8;
+    StatusDescription_NA = -1;
+}
+
+enum GapType {
+    Response_Time = 0;                                /* RT response after command */
+    Intermessage_Gap = 1;                             /* min 4 µs between messages */
+    Interword_Gap = 2;                                /* shall be none when contiguous */
+    GapType_NA = -1;
+}
+
+enum ErrorType {
+    ErrorType_None = 0;
+    ParityError = 1;
+    ManchesterError = 2;
+    SyncError = 3;
+    WordCountError = 4;
+    IllegalCommand = 5;
+    NoResponse = 6;
+    ContiguousError = 7;
+    AddressError = 8;
+    MessageError = 9;
+    Busy = 10;
+    Timeout = 11;
+    FormError = 12;
+    BitError = 13;
+    ReservedBitSet = 14;
+}
+
+enum ProtocolState {
+    Idle = 0;
+    Command = 1;
+    Data = 2;
+    Status = 3;
+    Response_Gap = 4;
+    Intermessage_Gap = 5;
+    None = 6;
+}

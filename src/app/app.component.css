@@ -149,6 +149,10 @@ body.light-mode {
   border-left: 1px solid var(--inner-block-border, #09090B);
 
   overflow: auto;
+
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
 }
 
 /* Native Windows <select>/<input> are white unless color-scheme is dark. */

@@ -14,6 +14,7 @@ import { ChannelSelectionComponent } from './features/channel-selection/channel-
 import { PlotViewComponent } from './features/plot-view/plot-view.component';
 import { ImportSectionComponent } from './features/import-section/import-section.component';
 import { DisplaySectionComponent } from './features/display-section/display-section.component';
+import { ExportSectionComponent } from './features/export-section/export-section.component';
 
 @Component({
   selector: 'app-root',
@@ -34,6 +35,7 @@ import { DisplaySectionComponent } from './features/display-section/display-sect
     PlotViewComponent,
     ImportSectionComponent,
     DisplaySectionComponent,
+    ExportSectionComponent,
   ],
 
   providers: [],
