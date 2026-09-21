@@ -1,0 +1,342 @@
+// milframe.proto
+// Software encoding of MIL-STD-1553B information-transfer formats.
+// Field layouts follow MIL-STD-1553B §4.3.3 (word size, word formats,
+// mode codes, status bits, and message formats) as described in
+// "Review and Rationale of MIL-STD-1553 A and B".
+//
+// A transmitted word is 20 bit times (3-bit invalid-Manchester sync +
+// 16 information bits + 1 odd-parity bit) at 1.0 Mbit/s (§4.3.3.3–4).
+
+syntax = "proto3";
+
+package milstd1553;
+
+option java_package = "mil.std1553";
+option java_outer_classname = "MilFrameProto";
+option csharp_namespace = "MilStd1553";
+option go_package = "milstd1553/milframe";
+
+// ---------------------------------------------------------------------------
+// Terminals, buses, and encoding (§3, §4.2, §4.3.3)
+// ---------------------------------------------------------------------------
+
+// Terminal roles on the multiplex data bus (§3.11–3.13).
+enum TerminalRole {
+  TERMINAL_ROLE_UNSPECIFIED = 0;
+  TERMINAL_ROLE_BUS_CONTROLLER = 1;  // initiates all transfers (§3.11, §4.2)
+  TERMINAL_ROLE_BUS_MONITOR = 2;     // records selected traffic (§3.12)
+  TERMINAL_ROLE_REMOTE_TERMINAL = 3; // neither BC nor BM (§3.13)
+}
+
+// Dual-standby redundant buses (§3.17, §4.6). Only one bus is active
+// except when a superseding command is issued on the standby bus.
+enum BusId {
+  BUS_ID_UNSPECIFIED = 0;
+  BUS_ID_A = 1;
+  BUS_ID_B = 2;
+}
+
+// Manchester II biphase-L data code (§4.3.3.2).
+enum DataCode {
+  DATA_CODE_UNSPECIFIED = 0;
+  DATA_CODE_MANCHESTER_II_BIPHASE_L = 1;
+}
+
+// Command/status vs data are distinguished by the 3-bit sync waveform
+// (§4.3.3.5.1.1, §4.3.3.5.2.1). Command and status share the same sync.
+enum SyncKind {
+  SYNC_KIND_UNSPECIFIED = 0;
+  // +1.5 bit times then −1.5 bit times (command and status).
+  SYNC_KIND_COMMAND_STATUS = 1;
+  // −1.5 bit times then +1.5 bit times (data).
+  SYNC_KIND_DATA = 2;
+}
+
+enum WordKind {
+  WORD_KIND_UNSPECIFIED = 0;
+  WORD_KIND_COMMAND = 1;  // §4.3.3.5.1
+  WORD_KIND_DATA = 2;     // §4.3.3.5.2
+  WORD_KIND_STATUS = 3;   // §4.3.3.5.3
+}
+
+// T/R bit in the command word (§4.3.3.5.1.3).
+// Logic 0 = RT shall receive; logic 1 = RT shall transmit.
+enum TransmitReceive {
+  TRANSMIT_RECEIVE_UNSPECIFIED = 0;
+  TRANSMIT_RECEIVE_RECEIVE = 1;   // T/R = 0
+  TRANSMIT_RECEIVE_TRANSMIT = 2;  // T/R = 1
+}
+
+// ---------------------------------------------------------------------------
+// Mode codes (Table I / Table II-1, §4.3.3.5.1.7)
+//
+// Subaddress/mode field 00000 or 11111 means the next 5 bits are a mode
+// code, not a word count. Codes 00000–01111 have no data word (T/R=1).
+// Codes 10000–11111 transfer exactly one data word.
+// Broadcast address is decimal 31 (11111) (§3.18, §4.3.3.5.1.2).
+// ---------------------------------------------------------------------------
+
+enum ModeCode {
+  MODE_CODE_UNSPECIFIED = 0;
+
+  // Without associated data word (00000–01111).
+  MODE_CODE_DYNAMIC_BUS_CONTROL = 1;                 // 00000, T/R=1, no broadcast
+  MODE_CODE_SYNCHRONIZE = 2;                         // 00001, T/R=1, broadcast OK
+  MODE_CODE_TRANSMIT_STATUS_WORD = 3;                // 00010, T/R=1, no broadcast
+  MODE_CODE_INITIATE_SELF_TEST = 4;                  // 00011, T/R=1, broadcast OK
+  MODE_CODE_TRANSMITTER_SHUTDOWN = 5;                // 00100, T/R=1, broadcast OK
+  MODE_CODE_OVERRIDE_TRANSMITTER_SHUTDOWN = 6;       // 00101, T/R=1, broadcast OK
+  MODE_CODE_INHIBIT_TERMINAL_FLAG_BIT = 7;           // 00110, T/R=1, broadcast OK
+  MODE_CODE_OVERRIDE_INHIBIT_TERMINAL_FLAG_BIT = 8;  // 00111, T/R=1, broadcast OK
+  MODE_CODE_RESET_REMOTE_TERMINAL = 9;               // 01000, T/R=1, broadcast OK
+  MODE_CODE_RESERVED_WITHOUT_DATA = 10;              // 01001–01111, do not use
+
+  // With associated data word (10000–11111).
+  MODE_CODE_TRANSMIT_VECTOR_WORD = 17;               // 10000, T/R=1, no broadcast
+  MODE_CODE_SYNCHRONIZE_WITH_DATA = 18;              // 10001, T/R=0, broadcast OK
+  MODE_CODE_TRANSMIT_LAST_COMMAND = 19;              // 10010, T/R=1, no broadcast
+  MODE_CODE_TRANSMIT_BIT_WORD = 20;                  // 10011, T/R=1, no broadcast
+  MODE_CODE_SELECTED_TRANSMITTER_SHUTDOWN = 21;      // 10100, T/R=0, broadcast OK
+  MODE_CODE_OVERRIDE_SELECTED_TRANSMITTER_SHUTDOWN = 22;  // 10101, T/R=0, broadcast OK
+  MODE_CODE_RESERVED_WITH_DATA = 23;                 // 10110–11111, do not use
+}
+
+// Message formats on figures 6 and 7 / §4.3.3.6. No other formats are
+// permitted on the bus.
+enum MessageFormat {
+  MESSAGE_FORMAT_UNSPECIFIED = 0;
+  MESSAGE_FORMAT_BC_TO_RT = 1;                       // §4.3.3.6.1
+  MESSAGE_FORMAT_RT_TO_BC = 2;                       // §4.3.3.6.2
+  MESSAGE_FORMAT_RT_TO_RT = 3;                       // §4.3.3.6.3
+  MESSAGE_FORMAT_MODE_WITHOUT_DATA = 4;              // §4.3.3.6.4
+  MESSAGE_FORMAT_MODE_WITH_DATA_TRANSMIT = 5;        // §4.3.3.6.5
+  MESSAGE_FORMAT_MODE_WITH_DATA_RECEIVE = 6;         // §4.3.3.6.6
+  MESSAGE_FORMAT_BROADCAST_BC_TO_RT = 7;             // §4.3.3.6.7.1
+  MESSAGE_FORMAT_BROADCAST_RT_TO_RT = 8;             // §4.3.3.6.7.2
+  MESSAGE_FORMAT_BROADCAST_MODE_WITHOUT_DATA = 9;    // §4.3.3.6.7.3
+  MESSAGE_FORMAT_BROADCAST_MODE_WITH_DATA = 10;      // §4.3.3.6.7.4
+}
+
+// ---------------------------------------------------------------------------
+// Word validation (§4.3.3.5.3.3, §4.4.1.1)
+// ---------------------------------------------------------------------------
+
+message WordValidity {
+  bool valid_sync = 1;
+  bool valid_manchester = 2;
+  bool sixteen_data_bits = 3;
+  bool odd_parity = 4;
+  bool contiguous = 5;
+  bool address_match = 6;   // unique RT address or broadcast 31
+  bool illegal_command = 7;
+}
+
+// Capture timing for a 20-bit-time word (1 bit time = 1 µs at 1 Mbit/s).
+message WordTiming {
+  double start_time_s = 1;
+  double end_time_s = 2;
+  // Response / intermessage gap measured before this word, microseconds.
+  double gap_us = 3;
+}
+
+// ---------------------------------------------------------------------------
+// Command word — §4.3.3.5.1 / figure 3
+//
+// Bit times after sync (information bits 4–19 of the 20-bit word):
+//   4–8   RT address (5)
+//   9     T/R (1)
+//  10–14  subaddress / mode (5)
+//  15–19  word count / mode code (5)
+//  20     odd parity
+//
+// Word count encoding: all 1s = 31, all 0s = 32 (§4.3.3.5.1.5).
+// Subaddress 00000 and 11111 are reserved for mode control
+// (§4.3.3.5.1.4). RT address 31 (11111) is the broadcast address
+// and shall not be assigned as a unique RT address (§4.3.3.5.1.2).
+// ---------------------------------------------------------------------------
+
+message CommandWord {
+  uint32 rt_address = 1;                 // 5 bits, 0–30 unique; 31 = broadcast
+  TransmitReceive transmit_receive = 2;  // 1 bit
+  uint32 subaddress_mode = 3;            // 5 bits; 0 or 31 => mode command
+  uint32 word_count_or_mode_code = 4;    // 5 bits raw field
+  bool odd_parity = 5;
+
+  // Decoded helpers (not on-wire extra bits).
+  bool is_mode_command = 6;              // subaddress_mode is 0 or 31
+  bool is_broadcast = 7;                 // rt_address == 31
+  uint32 decoded_word_count = 8;         // 1–32 when not a mode command
+  ModeCode mode_code = 9;                // set when is_mode_command
+  uint32 raw_information = 10;           // bits 4–19 packed as uint16
+}
+
+// ---------------------------------------------------------------------------
+// Data word — §4.3.3.5.2 / figure 3
+//
+// Sync is inverted vs command/status. Sixteen data bits, MSB first
+// (§4.3.2). Unused bits transmitted as logic zero (§4.3.1).
+// ---------------------------------------------------------------------------
+
+message DataWord {
+  uint32 data = 1;          // 16 bits, MSB first
+  bool odd_parity = 2;
+}
+
+// ---------------------------------------------------------------------------
+// Status word — §4.3.3.5.3 / figure 3 / figure II-2
+//
+// Bit times after sync:
+//   4–8   RT address (5)
+//   9     message error          (required)
+//  10     instrumentation        (optional; always 0 if implemented)
+//  11     service request        (optional)
+//  12–14  reserved               (shall be 0)
+//  15     broadcast command received
+//  16     busy                   (optional)
+//  17     subsystem flag         (optional)
+//  18     dynamic bus control acceptance (optional)
+//  19     terminal flag          (optional)
+//  20     odd parity
+//
+// Status is suppressed on broadcast receive (§4.3.3.5.3, §4.3.3.6.7).
+// Status bits reset after the next valid command except transmit-status
+// and transmit-last-command mode codes (§4.3.3.5.4).
+// ---------------------------------------------------------------------------
+
+message StatusWord {
+  uint32 rt_address = 1;                      // 5 bits
+  bool message_error = 2;                     // bit time 9
+  bool instrumentation = 3;                   // bit time 10; shall be 0
+  bool service_request = 4;                   // bit time 11
+  uint32 reserved = 5;                        // bits 12–14; shall be 0
+  bool broadcast_command_received = 6;        // bit time 15
+  bool busy = 7;                              // bit time 16
+  bool subsystem_flag = 8;                    // bit time 17
+  bool dynamic_bus_control_acceptance = 9;    // bit time 18
+  bool terminal_flag = 10;                    // bit time 19
+  bool odd_parity = 11;
+  bool suppressed = 12;                       // true if broadcast withheld status
+  uint32 raw_information = 13;                // bits 4–19 packed as uint16
+}
+
+// One 20-bit-time transmission unit captured on a bus.
+message MilWord {
+  WordKind kind = 1;
+  SyncKind sync = 2;
+  BusId bus = 3;
+  WordTiming timing = 4;
+  WordValidity validity = 5;
+  uint32 raw_20bit = 6;  // sync + 16 info + parity, low 20 bits
+
+  oneof payload {
+    CommandWord command = 10;
+    DataWord data = 11;
+    StatusWord status = 12;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Message formats — §4.3.3.6
+//
+// Command and data words from the BC are contiguous (no interword gap).
+// Status and following data words from an RT are contiguous.
+// Maximum data words per message block: 32.
+// ---------------------------------------------------------------------------
+
+message BcToRtMessage {
+  CommandWord receive_command = 1;  // T/R = receive
+  repeated DataWord data = 2;       // 1–32, contiguous after command
+  StatusWord rt_status = 3;         // after response time
+}
+
+message RtToBcMessage {
+  CommandWord transmit_command = 1; // T/R = transmit
+  StatusWord rt_status = 2;
+  repeated DataWord data = 3;       // omitted entirely if busy bit is set
+}
+
+message RtToRtMessage {
+  CommandWord receive_command = 1;  // RT A, T/R = receive
+  CommandWord transmit_command = 2; // RT B, T/R = transmit, contiguous
+  StatusWord transmitter_status = 3; // RT B
+  repeated DataWord data = 4;
+  StatusWord receiver_status = 5;    // RT A after data
+}
+
+message ModeWithoutDataMessage {
+  CommandWord mode_command = 1;  // T/R = transmit, no data word
+  StatusWord rt_status = 2;      // omitted on broadcast
+}
+
+message ModeWithDataTransmitMessage {
+  CommandWord mode_command = 1;  // T/R = transmit
+  StatusWord rt_status = 2;
+  DataWord data = 3;             // vector, last command, or BIT word
+}
+
+message ModeWithDataReceiveMessage {
+  CommandWord mode_command = 1;  // T/R = receive
+  DataWord data = 2;             // contiguous after command
+  StatusWord rt_status = 3;      // omitted on broadcast
+}
+
+message BroadcastBcToRtMessage {
+  CommandWord receive_command = 1;  // rt_address = 31
+  repeated DataWord data = 2;
+  // Receiving RTs set broadcast_command_received and withhold status.
+}
+
+message BroadcastRtToRtMessage {
+  CommandWord receive_command = 1;   // rt_address = 31
+  CommandWord transmit_command = 2;  // unique RT A
+  StatusWord transmitter_status = 3; // RT A only
+  repeated DataWord data = 4;
+}
+
+// Complete command/response message on the bus.
+message MilMessage {
+  MessageFormat format = 1;
+  BusId bus = 2;
+  double start_time_s = 3;
+  double end_time_s = 4;
+  double response_time_us = 5;     // RT response gap after command
+  double intermessage_gap_us = 6;  // gap before next message (min 4 µs)
+
+  oneof body {
+    BcToRtMessage bc_to_rt = 10;
+    RtToBcMessage rt_to_bc = 11;
+    RtToRtMessage rt_to_rt = 12;
+    ModeWithoutDataMessage mode_without_data = 13;
+    ModeWithDataTransmitMessage mode_with_data_transmit = 14;
+    ModeWithDataReceiveMessage mode_with_data_receive = 15;
+    BroadcastBcToRtMessage broadcast_bc_to_rt = 16;
+    BroadcastRtToRtMessage broadcast_rt_to_rt = 17;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Analyzer / capture frame
+//
+// Software unit used by a bus monitor (§3.12): one decoded word plus the
+// assembled message it belongs to. Matches listing columns Command /
+// Data Word / Status on a dual-redundant bus.
+// ---------------------------------------------------------------------------
+
+message MilFrame {
+  uint32 frame_id = 1;
+  BusId bus = 2;
+  TerminalRole source_role = 3;
+  WordTiming timing = 4;
+  MilWord word = 5;
+  MilMessage message = 6;
+}
+
+message MilCapture {
+  double reference_time_s = 1;
+  double start_time_s = 2;
+  double end_time_s = 3;
+  uint32 bit_rate_bps = 4;        // 1_000_000 (§4.3.3.3)
+  DataCode data_code = 5;         // Manchester II
+  repeated MilFrame frames = 6;
+  repeated MilMessage messages = 7;
+}
