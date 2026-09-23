@@ -36,3 +36,10 @@ export type PlotTool =
   | 'cursor'
   | 'grid'
   | 'flag';
+
+export interface PlotToolItem {
+  id: PlotTool;
+  label: string;
+  icon: string;
+  order: number;
+}
