@@ -32,6 +32,7 @@ export type PlotTool =
   | 'zoomIn'
   | 'zoomOut'
   | 'pan'
+  | 'fit'
   | 'move'
   | 'cursor'
   | 'grid'

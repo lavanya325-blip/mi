@@ -20,6 +20,6 @@ describe('PlotViewComponent', () => {
   });
 
   it('should expose ten plot operations', () => {
-    expect(component.tools.length).toBe(10);
+    expect(component.tools.length).toBe(11);
   });
 });

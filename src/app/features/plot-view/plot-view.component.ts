@@ -13,29 +13,10 @@ import {
 import { CommonModule } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import * as d3 from 'd3';
-import { BusPolygon, PacketBus, PlotTrack, Point } from './models/plot-track.model';
-import { createSampleTrace, EdgeCollection, TraceData } from './models/trace-data.model';
+import { BusPolygon, PacketBus, PlotTool, PlotToolItem, PlotTrack, Point } from './models/plot-track.model';
+import { TraceData } from './models/plot-trace.model';
 import { toEngineeringTime, toPoints, toRawPoints } from './extensions/plot-extensions';
 import { BusExtensions } from './extensions/bus-extensions';
-
-export type PlotTool =
-  | 'snapshot'
-  | 'expand'
-  | 'select'
-  | 'zoomIn'
-  | 'zoomOut'
-  | 'pan'
-  | 'move'
-  | 'cursor'
-  | 'grid'
-  | 'flag';
-
-export interface PlotToolItem {
-  id: PlotTool;
-  label: string;
-  icon: string;
-  order: number;
-}
 
 @Component({
   selector: 'app-plot-view',
@@ -70,10 +51,11 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     { id: 'zoomIn', label: 'Zoom in', icon: 'zoom_in', order: 3 },
     { id: 'zoomOut', label: 'Zoom out', icon: 'zoom_out', order: 4 },
     { id: 'pan', label: 'Pan', icon: 'pan_tool', order: 5 },
-    { id: 'move', label: 'Move', icon: 'open_with', order: 6 },
-    { id: 'cursor', label: 'Cursor', icon: 'calendar_month', order: 7 },
-    { id: 'grid', label: 'Grid', icon: 'grid_on', order: 8 },
-    { id: 'flag', label: 'Decode', icon: 'table_chart', order: 9 }
+    { id: 'fit', label: 'Fit', icon: 'fit_screen', order: 6 },
+    { id: 'move', label: 'Move', icon: 'open_with', order: 7 },
+    { id: 'cursor', label: 'Cursor', icon: 'calendar_month', order: 8 },
+    { id: 'grid', label: 'Grid', icon: 'grid_on', order: 9 },
+    { id: 'flag', label: 'Decode', icon: 'table_chart', order: 10 }
   ];
 
   hasData = false;
@@ -113,18 +95,12 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   private zoomBehavior?: d3.ZoomBehavior<SVGSVGElement, unknown>;
   private resizeObserver?: ResizeObserver;
   private readonly lineGenerator = d3.line<Point>().curve(d3.curveStepAfter);
-  private pendingSample = true;
 
   constructor(private cdr: ChangeDetectorRef) {}
 
   ngAfterViewInit(): void {
-    if (this.pendingSample && !this.hasData) {
-      this.loadTrace(createSampleTrace());
-    }
     this.measurePlot();
-    this.resizePlot();
     this.observeSize();
-    this.enablePan();
   }
 
   ngOnDestroy(): void {
@@ -205,7 +181,6 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
   }
 
   loadTrace(data: TraceData | null): void {
-    this.pendingSample = false;
     this.clearPlot();
 
     if (!data) {
@@ -219,10 +194,9 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.fullDomain = [data.startTime, data.endTime];
     this.start = data.startTime;
     this.stop = data.endTime;
-    this.applyZoomedWindow();
 
     Object.entries(data.channels).forEach(([id, collection]) => {
-      this.waveforms.set(id, this.edgesToWaveform(collection));
+      this.waveforms.set(id, toRawPoints(collection.firstEdgeRise, collection.edges));
     });
     Object.entries(data.buses).forEach(([id, packets]) => {
       this.busMap.set(id, packets);
@@ -248,6 +222,9 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     }
     if (tool === 'select') {
       return this.selectEnabled;
+    }
+    if (tool === 'fit') {
+      return this.isFitted();
     }
     if (tool === 'expand') {
       return this.isFullscreen;
@@ -276,6 +253,9 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
       case 'pan':
         this.activeTool = 'pan';
         this.enablePan();
+        break;
+      case 'fit':
+        this.fitToView();
         break;
       case 'move':
         this.activeTool = 'move';
@@ -402,18 +382,16 @@ export class PlotViewComponent implements AfterViewInit, OnDestroy {
     this.resizePlot();
   }
 
-  private edgesToWaveform(collection: EdgeCollection): Point[] {
-    return toRawPoints(collection.firstEdgeRise, collection.edges);
+  private fitToView(): void {
+    const [begin, end] = this.fullDomain;
+    this.start = begin;
+    this.stop = end;
+    this.resizePlot();
   }
 
-  private applyZoomedWindow(): void {
+  private isFitted(): boolean {
     const [begin, end] = this.fullDomain;
-    this.start = begin + this.minEdgeWidth * 80;
-    this.stop = this.start + this.minEdgeWidth * 140;
-    if (this.stop > end) {
-      this.start = begin;
-      this.stop = Math.min(end, begin + this.minEdgeWidth * 140);
-    }
+    return this.hasData && this.start === begin && this.stop === end;
   }
 
   private clampWindow(): void {
